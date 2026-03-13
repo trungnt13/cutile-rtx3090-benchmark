@@ -1,71 +1,82 @@
 # Tile Selection on RTX 3090: Why the Best Tile Changes with Size
 
-cuTile does not have a single best tile. The winner depends on workload scale, dtype, and machine balance.
+cuTile has no single best tile. The winner depends on workload scale, tile symmetry, and occupancy tuning.
 
-## Summary Table
+## Summary Table (FP16, square GEMM M=N=K)
 
-| Size | Best FP16 Tile | Occ | Latency (ms) | TFLOP/s | CTAs | K-tiles |
-|------|---------------|-----|-------------|---------|------|---------|
-| 128 | `64x64x64` | 8 | 0.005 | 0.93 | 4 | 2 |
-| 256 | `32x32x32` | 1 | 0.005 | 7.34 | 64 | 8 |
-| 512 | `64x64x64` | 2 | 0.009 | 29.57 | 64 | 8 |
-| 1024 | `128x64x64` | 2 | 0.035 | 61.93 | 128 | 16 |
+| Size | Tuned Tile | TFLOP/s | % Peak | Untuned Tile | TFLOP/s | % Peak | Speedup |
+|------|-----------|---------|--------|-------------|---------|--------|---------|
+| 128 | 32x32x32 | 0.57 | 0.4% | 32x32x32 | 0.57 | 0.4% | 1.00x |
+| 256 | 32x32x32 | 4.03 | 2.8% | 32x32x32 | 4.07 | 2.9% | 0.99x |
+| 512 | 64x64x64 | 19.76 | 13.9% | 64x64x32 | 18.40 | 13.0% | 1.07x |
+| 1024 | 128x64x64 | 64.99 | 45.8% | 64x64x16 | 30.13 | 21.2% | 2.16x |
+| 2048 | 128x64x32 | 81.02 | 57.1% | 64x64x32 | 52.45 | 36.9% | 1.54x |
+| 4096 | 128x128x64 | 88.70 | 62.5% | 64x64x64 | 52.11 | 36.7% | 1.70x |
+| 8192 | 128x128x64 | 72.95 | 51.4% | 64x64x64 | 44.60 | 31.4% | 1.64x |
+
+"Tuned" = asymmetric tiles + occupancy tuning. "Untuned" = symmetric tiles only, no occupancy hints.
 
 ## Three Forces
 
-The progression is driven by the interaction of:
+Every tile choice balances three competing pressures:
 
-1. **CTA count**: `(M/tile_m) * (N/tile_n)` — must be enough to cover 82 SMs
-2. **K-loop iterations**: `K/tile_k` — fewer iterations means less loop overhead and better reuse
-3. **Per-CTA footprint**: larger tiles increase register/shared-memory pressure, reducing scheduling flexibility
+1. **CTA count** `(M/tile_m) * (N/tile_n)` -- must cover 82 SMs; too few CTAs starve the GPU
+2. **K-loop depth** `K/tile_k` -- fewer iterations means less loop overhead and better data reuse
+3. **Per-CTA footprint** -- larger tiles consume more registers/shared memory, reducing scheduling flexibility
 
-## Size 128: Latency Microkernel
+## Size-by-Size Analysis
 
-The problem is too small for CTA abundance to matter. `64x64x64` wins by cutting K-tiles from 4 to 2 and reducing CTAs from 16 to 4. The top configurations are tightly clustered (0.93 vs 0.92 TFLOP/s) — this is a launch-overhead-dominated regime.
+**128 (32x32x32, 16 CTAs, 4 K-tiles):** Launch overhead dominates. Only 0.4% peak regardless of tile choice. All configs are tightly clustered; tuning cannot help at this scale.
 
-## Size 256: Grid Coverage Matters
+**256 (32x32x32, 64 CTAs, 8 K-tiles):** Grid coverage matters. 64 CTAs finally distribute across 82 SMs. Larger tiles collapse CTA count too aggressively. Tuned and untuned agree.
 
-`32x32x32` produces 64 CTAs — finally enough to distribute across 82 SMs. `64x64x64` drops to 16 CTAs, which is too few. The larger tile's reuse advantage doesn't compensate for poor grid coverage at this size.
+**512 (64x64x64, 64 CTAs, 8 K-tiles):** Reuse starts to dominate. 64 CTAs still cover the GPU while halving K-iterations vs 32x32x32. Tuned picks tile_k=64 over untuned's 32 -- deeper K-loop amortization at this scale.
 
-## Size 512: Reuse Starts to Dominate
+**1024 (128x64x64, 128 CTAs, 16 K-tiles):** The tuning gap explodes. Asymmetric 128x64x64 doubles output work per CTA vs the untuned 64x64x16 winner. 2.16x speedup -- the largest gap in the sweep.
 
-`64x64x64` returns as the winner: 64 CTAs cover the GPU, and halving K-loop iterations (8 vs 16) pays off. This is the cleanest crossover — the workload is now large enough to amortize per-CTA cost of bigger tiles.
+**2048 (128x64x32, 512 CTAs, 64 K-tiles):** Asymmetric tile with small tile_k=32. The kernel needs 512 CTAs for grid saturation at this scale; tuned config finds the right footprint-to-parallelism tradeoff. 1.54x over untuned.
 
-## Size 1024: Asymmetric Tiles Win
+**4096 (128x128x64, 1024 CTAs, 64 K-tiles):** Peak throughput at 88.70 TFLOP/s (62.5% peak). Enough CTAs (1024) that the largest tile wins outright. Untuned symmetric 64x64x64 leaves 25.8 percentage points on the table.
 
-`128x64x64` beats `64x64x64` by doubling output work per CTA while maintaining 128 CTAs. The biggest symmetric tiles (`128x128x64`, `128x128x128`) overshoot — only 64 CTAs and excessive per-CTA footprint.
+**8192 (128x128x64, 4096 CTAs, 128 K-tiles):** Same tile as 4096 but throughput drops to 72.95 TFLOP/s. Memory system saturates at 4096 CTAs; diminishing returns from additional parallelism.
 
-![FP16 tile sweep throughput](../artifacts/fp16_focus/cutile_fp16_tile_sweep_throughput.png)
-*Tile preference is size-dependent: small problems want low overhead, large problems reward reuse.*
+## Tuning Gap: Symmetric vs Asymmetric + Occupancy
 
-![FP16 Pareto](../artifacts/fp16_focus/cutile_fp16_pareto_tiles.png)
-*The best tiles move onto the useful latency-throughput frontier, not just maximize one metric.*
+The gap between tuned and untuned is negligible at small sizes but dramatic at 1024+:
+
+- At 1024: 64.99 vs 30.13 TFLOP/s (2.16x) -- asymmetric tiles unlock configurations the symmetric sweep never explores
+- At 4096: 88.70 vs 52.11 TFLOP/s (1.70x) -- the largest absolute gap at 36.59 TFLOP/s
+
+The untuned sweep is stuck at 64x64x64 for large sizes because symmetric tiles cannot simultaneously maximize per-CTA work and maintain sufficient grid coverage. Asymmetric tiles (128x64x32, 128x128x64) decouple M/N tile dimensions to solve this.
 
 ## Occupancy Hints
 
-| Size | Best Occ | Rationale |
-|------|----------|-----------|
-| 128 | 8 | Tiny kernel — high residency shaves microseconds |
-| 256 | 1 | Lightweight CTA — occupancy hint is secondary |
-| 512 | 2 | Balance between per-CTA resources and residency |
-| 1024 | 2 | Same balance at larger scale |
+| Size | Best Occ | CTAs | Observation |
+|------|----------|------|-------------|
+| 128 | 2 | 16 | Tiny kernel -- occupancy irrelevant |
+| 256 | 1 | 64 | Lightweight CTA, hint is secondary |
+| 512 | 2 | 64 | Balanced residency vs per-CTA resources |
+| 1024 | 2 | 128 | Same balance at larger scale |
+| 2048 | 2 | 512 | Grid-saturated, occ=2 sufficient |
+| 4096 | 2 | 1024 | Occ=2 dominates across large sizes |
+| 8192 | 2 | 4096 | Consistent with 4096 |
 
-Higher occupancy is not monotonically better. Once CTAs are compute-heavy, the system prefers per-CTA efficiency over maximum residency.
+Occupancy=2 wins almost universally. NCU profiling shows why: cuTile PTX kernel at 95% occupancy achieves only 7.8 GB/s bandwidth (compute-starved); Triton at 22% occupancy reaches 121 GB/s. Higher occupancy is not monotonically better -- per-CTA efficiency matters more.
 
 ## Other Dtypes
 
-- **BF16**: Similar to FP16 — larger tiles win as size grows
-- **Float32**: Prefers smaller `tile_k` (16) due to doubled byte footprint; best tiles are 16x16x16 (128) through 64x64x16 (1024)
+- **BF16**: Similar progression to FP16; larger tiles win as size grows
+- **Float32**: Prefers smaller tile_k (16) due to doubled byte footprint; best tiles shift to 16x16x16 through 64x64x16
 - **Int8**: Diagnostically interesting but not valid for tuning recommendations (semantics issue)
 
 ## Cost Model
 
-A linear cost model `latency = CTA_count * K_iters * (alpha * tile_volume + beta)` is fitted to benchmark data in `benchmarks/cost_model.py`. See `artifacts/cost_model/` for prediction accuracy against measured winners.
+A linear cost model achieves **0% tile prediction accuracy**. Tile selection is fundamentally non-linear -- the interaction between CTA count, K-loop depth, and per-CTA footprint cannot be captured by a simple product model. See `benchmarks/cost_model.py` and `artifacts/cost_model/`.
 
 ## Practical Heuristic
 
-- Tiny GEMMs (128): favor low-overhead tiles; top configs are tightly clustered
-- Small GEMMs (256): prefer `32x32x32`; problem too small for heavyweight CTAs
-- Medium GEMMs (512): move to `64x64x64`; reuse starts to dominate
-- Large GEMMs (1024+): prefer asymmetric tiles like `128x64x64`; maximize per-CTA work without starving the grid
-- Avoid assuming the largest symmetric tile is best
+1. **Tiny (128--256):** Use `32x32x32`. Launch overhead dominates; tuning irrelevant
+2. **Medium (512):** Move to `64x64x64`. Reuse starts paying off
+3. **Large (1024--2048):** Use asymmetric tiles (`128x64x64`, `128x64x32`). The tuning gap is 1.5--2.2x
+4. **Very large (4096+):** Use `128x128x64` with occupancy=2. Peak throughput regime
+5. Never assume the largest symmetric tile is best -- it leaves up to 25 percentage points on the table

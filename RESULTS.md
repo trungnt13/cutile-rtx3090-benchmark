@@ -2,23 +2,40 @@
 
 ## Summary
 
+**Full sweep (symmetric tiles, no occupancy tuning):**
+
 | Backend | Dtype | Best Size | TFLOP/s | Latency (ms) | % Peak |
 |---------|-------|-----------|---------|---------------|--------|
-| cuTile (128x64x64) | float16 | 1024 | 61.93 | 0.035 | 43.6% |
-| cuTile (64x64x64) | bfloat16 | 1024 | 56.07 | 0.038 | 39.5% |
-| cuTile (64x64x16) | float32 | 1024 | 8.12 | 0.264 | 22.8% |
-| Torch | float16 | 1024 | 58.82 | 0.037 | 41.4% |
-| Triton | float16 | 1024 | 49.13 | 0.044 | 34.6% |
-| PTX-inline (16x16) | float16 | 1024 | 4.31 | 0.498 | 3.0% |
+| cuTile (64x64x32) | float16 | 2048 | 52.45 | 0.328 | 36.9% |
+| cuTile (64x64x16) | bfloat16 | 2048 | 44.64 | 0.385 | 31.4% |
+| cuTile (64x64x16) | float32 | 4096 | 3.02 | 45.549 | 8.5% |
+| cuTile (64x64x32) | int8 | 2048 | 63.66 TOP/s | 0.270 | 22.4% |
+| Torch | float16 | 8192 | 68.15 | — | 48.0% |
+| Torch | bfloat16 | 8192 | 70.74 | — | 49.8% |
+| Torch (TF32) | float32 | 8192 | 37.28 | — | 104.7% |
+| Triton (64x64x32) | float16 | 2048 | 62.40 | — | 43.9% |
 
-*Values from RTX 3090, 82 SMs. Peak: FP16/BF16 142 TFLOP/s, FP32 35.6 TFLOP/s, INT8 284 TOP/s.*
+**FP16 with asymmetric tiles + occupancy tuning:**
+
+| Size | Tile | Occ | TFLOP/s | % Peak | Latency (ms) |
+|------|------|-----|---------|--------|--------------|
+| 128 | 32x32x32 | 2 | 0.57 | 0.4% | 0.007 |
+| 256 | 32x32x32 | 1 | 4.03 | 2.8% | 0.008 |
+| 512 | 64x64x64 | 2 | 19.76 | 13.9% | 0.014 |
+| 1024 | 128x64x64 | 2 | 64.99 | 45.8% | 0.033 |
+| 2048 | 128x64x32 | 2 | 81.02 | 57.1% | 0.212 |
+| 4096 | 128x128x64 | 2 | 88.70 | **62.5%** | 1.549 |
+| 8192 | 128x128x64 | 2 | 72.95 | 51.4% | 15.071 |
+
+*RTX 3090, 82 SMs. Peak: FP16/BF16 142 TFLOP/s, FP32 35.6 TFLOP/s, INT8 284 TOP/s.*
 
 ## Key Findings
 
-- cuTile is latency- and throughput-competitive with Torch and Triton on FP16/BF16 when tile shapes are tuned.
-- Tile choice is the dominant control knob: the best tile changes with problem size (32x32x32 at 256, 64x64x64 at 512, 128x64x64 at 1024).
-- Cold-start compile cost (10-50 ms for cuTile/Triton) is real and must be separated from steady-state measurement.
-- The int8 path does not preserve exact int32 GEMM semantics; see [int8 investigation](investigations/int8_ir/).
+- **Tile selection is the dominant lever.** Untuned symmetric tiles cap at 37% peak FP16; tuned asymmetric tiles with occupancy reach 62.5% — a 1.7x improvement from tile choice alone.
+- **cuTile is competitive when tuned.** At 4096, tuned cuTile (88.70 TFLOP/s) exceeds Triton (62.40) and narrows the gap to Torch (68.15), both measured at their respective best sizes.
+- **Float32 is severely limited.** cuTile achieves 8.5% peak vs Torch at 105% (TF32 path). cuTile has no TF32 support.
+- **Best tile shape varies with problem size.** 32x32x32 at small sizes, 128x128x64 at large — a linear cost model achieves 0% prediction accuracy (always picks 128x128x128).
+- **Throughput drops at 8192.** cuTile falls from 62.5% to 51.4% peak going from 4096 to 8192, suggesting register pressure or scheduling limits at scale.
 
 ## Figures
 
@@ -26,10 +43,10 @@
 *Steady-state latency across backends and dtypes (log scale).*
 
 ![Throughput comparison](artifacts/full/comparison_throughput.png)
-*Throughput confirms FP16/BF16 competitiveness.*
+*Throughput in TFLOP/s. Torch leads at large sizes; cuTile is competitive at mid-range.*
 
 ![FP16 Pareto frontier](artifacts/fp16_focus/fp16_pareto_tradeoff.png)
-*Latency-vs-throughput Pareto: cuTile enters the useful frontier on RTX 3090.*
+*Latency-vs-throughput Pareto for FP16 tile configurations.*
 
 ![First-launch latency](artifacts/full/comparison_first_launch_latency.png)
 *Cold-start overhead separated from steady-state.*
@@ -37,16 +54,28 @@
 ![% of peak throughput](artifacts/full/comparison_pct_peak.png)
 *Achieved throughput as percentage of RTX 3090 theoretical peak.*
 
-![Roofline](artifacts/full/roofline.png)
-*Roofline analysis: all benchmark points vs. RTX 3090 memory/compute ceilings.*
+## NCU Profiling (at 1024)
+
+| Kernel | Occupancy | Registers | Mem BW (GB/s) |
+|--------|-----------|-----------|---------------|
+| PTX matmul_tiled_f16 | 95.4% | 38 | 7.8 |
+| Triton matmul_kernel | 21.9% | 69 | 121 |
+| cuBLAS ampere_sgemm | 29.6% | 122 | 243 |
+| Torch cutlass GEMM | 8.3% | 224 | 95 |
+
+High occupancy does not imply high performance. PTX achieves 95% occupancy but is the slowest kernel — it uses too few registers to exploit data reuse, starving the ALUs despite full SM utilization.
+
+## Cost Model
+
+A linear cost model for tile selection achieves 0% accuracy (R²=0.198), always predicting 128x128x128 regardless of dtype or size. Tile selection requires non-linear reasoning.
 
 ## Int8 Caveat
 
-The cuTile int8 path accumulates through a narrowed int8 intermediate rather than exact int32 GEMM semantics (`max_err_exact = 768`, `max_err_tile_wrapped_i8 = 0`). Int8 throughput numbers are diagnostic only. See [investigations/int8_ir/](investigations/int8_ir/) for IR evidence.
+The int8 path accumulates through a narrowed int8 intermediate rather than exact int32 GEMM semantics. Errors scale with matrix size: max_err ranges from 384 (N=128) to 14080 (N=8192). Int8 throughput numbers are diagnostic only. See [investigations/int8_ir/](investigations/int8_ir/).
 
 ## Cold-Start
 
-Compile and first-launch costs are measured separately with host wall time. For FP16 1024x1024x1024: cuTile compile ~22 ms, first launch ~0.8 ms, steady-state ~0.035 ms.
+cuTile compile: 8-24 ms. First-launch: 7-39 ms (size-dependent). Both are one-time costs per kernel configuration.
 
 ## Methodology and Raw Data
 

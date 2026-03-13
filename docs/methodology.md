@@ -65,9 +65,22 @@ Reports carry both `max_err_exact` and `max_err_tile_wrapped_i8`.
 
 ## Tile Policy
 
-The public full benchmark compares a fixed set of named cuTile tile families. That keeps the charts readable and makes size-to-size trade-offs interpretable.
+Two benchmark scopes produce complementary data:
+
+- **Full sweep** (`reports/full_report.py`): fixed symmetric tiles (16x16x16 through 128x128x128) across all dtypes. Keeps charts readable and size-to-size trade-offs interpretable, but does not include asymmetric tiles or occupancy tuning.
+- **FP16 focus** (`reports/fp16_focus.py`): asymmetric tiles (128x64x64, 128x128x64, etc.) with occupancy hints {1, 2, 4, 8, auto}. Shows what tuned cuTile can achieve when the tile search space is expanded.
+
+The gap between these two scopes is itself a result: at size 4096, tuned cuTile reaches 62.5% of peak vs 36.7% with symmetric tiles only.
 
 The PTX-inline baseline intentionally keeps a fixed 16x16 tile. A separate PTX iteration study explores alternative PTX designs without conflating them with the main charts.
+
+## NCU Profiling
+
+Selected best configs are profiled with NVIDIA Nsight Compute (`ncu`) to collect achieved occupancy, memory bandwidth, and register counts. Key insight: high occupancy does not imply high performance — PTX achieves 95% occupancy (38 registers) but only 7.8 GB/s memory bandwidth, while Triton at 22% occupancy (69 registers) achieves 121 GB/s.
+
+## Cost Model
+
+A linear cost model `latency = CTA_count * K_iters * (alpha * tile_volume + beta)` is fitted to cuTile data via least-squares. The model achieves 0% tile prediction accuracy (R² = 0.198), confirming that tile selection depends on non-linear interactions between occupancy, register pressure, and scheduling that a simple geometric model cannot capture.
 
 ## Cold-Start Consistency
 
