@@ -554,22 +554,21 @@ def run_cublas(a, b, c, dtype_name: str) -> None:
     """Run a direct cuBLAS GEMM via CuPy, using cupy.matmul on DLPack-transferred arrays.
 
     This avoids Torch's dispatcher overhead while still going through cuBLAS internally
-    (CuPy dispatches to cuBLAS for supported types). Pre-conversion happens outside the
-    timing loop so DLPack overhead is excluded from measurement.
+    (CuPy dispatches to cuBLAS for supported types). Falls back to Torch for unsupported
+    dtypes (int8, bfloat16 without ml_dtypes).
     """
 
-    if dtype_name == "int8":
-        # cuBLAS int8 GEMM is not wired here; fall back to Torch path.
+    if dtype_name in ("int8", "bfloat16"):
+        # cuBLAS int8 GEMM not wired; bfloat16 DLPack requires ml_dtypes in CuPy.
         run_torch(a, b, c, dtype_name)
         return
     # Convert torch tensors to cupy arrays via DLPack (zero-copy on same device).
     a_cp = cp.from_dlpack(a)
     b_cp = cp.from_dlpack(b)
     c_cp = cp.from_dlpack(c)
-    # CuPy matmul dispatches to cuBLAS for float32/float16/bfloat16.
-    # Use out= to write directly into the pre-allocated output.
-    if c.dtype == torch.float32 and a.dtype != torch.float32:
-        # Half inputs with float32 output: cast in cupy then matmul.
+    # CuPy matmul dispatches to cuBLAS for float32/float16.
+    if c.dtype == torch.float32 and a.dtype == torch.float16:
+        # FP16 inputs with FP32 output: cast then matmul.
         result = cp.matmul(a_cp.astype(cp.float32), b_cp.astype(cp.float32))
         c_cp[:] = result
     else:

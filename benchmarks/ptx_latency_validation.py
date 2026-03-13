@@ -57,7 +57,7 @@ def main() -> None:
     core.torch.cuda.nvtx.range_pop()
 
     core.torch.cuda.nvtx.range_push("ptx_steady_state")
-    steady_ms = core.benchmark_ms_cupy(
+    steady_timing = core.benchmark_ms_cupy(
         lambda: core.run_ptx(kernel, a, b, c, args.m, args.n, args.k),
         args.warmup,
         args.iters,
@@ -69,7 +69,8 @@ def main() -> None:
         "shape": [args.m, args.n, args.k],
         "compile_ms": compile_ms,
         "first_launch_ms": first_launch_ms,
-        "steady_latency_ms": steady_ms,
+        "steady_latency_ms": steady_timing.mean,
+        "steady_latency_std_ms": steady_timing.std,
     }
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(summary, indent=2), encoding="utf-8")

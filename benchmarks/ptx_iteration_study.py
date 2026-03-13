@@ -181,13 +181,13 @@ def best_triton(a, b, size: int):
     out = core.torch.empty((size, size), device="cuda", dtype=core.torch.float32)
     best = None
     for tile in candidates:
-        ms = core.benchmark_ms_cupy(
+        timing = core.benchmark_ms_cupy(
             lambda: core.run_triton(a, b, out, size, size, size, tile[0], tile[1], tile[2], core.triton_out_dtype("float16")),
             WARMUP,
             ITERS,
         )
-        if best is None or ms < best[0]:
-            best = (ms, tile)
+        if best is None or timing.mean < best[0]:
+            best = (timing.mean, tile)
     return best
 
 
@@ -200,7 +200,8 @@ def collect() -> list[Row]:
         a, b = core.make_inputs("float16", size, size, size, seed=SEED)
         out_torch = core.torch.empty((size, size), device="cuda", dtype=core.torch.float16)
         torch_first_ms = core.measure_host_ms(lambda: core.run_torch(a, b, out_torch, "float16"))
-        torch_steady = core.benchmark_ms_torch(lambda: core.run_torch(a, b, out_torch, "float16"), WARMUP, ITERS)
+        torch_timing = core.benchmark_ms_torch(lambda: core.run_torch(a, b, out_torch, "float16"), WARMUP, ITERS)
+        torch_steady = torch_timing.mean
         rows.append(Row(size, "Torch", "baseline", "", 0.0, torch_first_ms, torch_steady, metric_tflops(size, torch_steady)))
 
         triton_out = core.torch.empty((size, size), device="cuda", dtype=core.torch.float32)
@@ -238,7 +239,8 @@ def collect() -> list[Row]:
             compile_ms = core.measure_host_ms(lambda: holder.setdefault("kernel", compile_variant(VARIANTS[variant]["code"])))
             kernel = holder["kernel"]
             first_ms = core.measure_host_ms(lambda: run_variant(kernel, variant, a, b, c, size, size, size))
-            steady_ms = core.benchmark_ms_cupy(lambda: run_variant(kernel, variant, a, b, c, size, size, size), WARMUP, ITERS)
+            steady_timing = core.benchmark_ms_cupy(lambda: run_variant(kernel, variant, a, b, c, size, size, size), WARMUP, ITERS)
+            steady_ms = steady_timing.mean
             rows.append(Row(size, "PTX", variant, VARIANTS[variant]["tile"], compile_ms, first_ms, steady_ms, metric_tflops(size, steady_ms)))
 
     return rows
