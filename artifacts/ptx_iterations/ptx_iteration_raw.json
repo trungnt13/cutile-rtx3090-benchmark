@@ -1,0 +1,202 @@
+[
+  {
+    "size": 128,
+    "backend": "Torch",
+    "variant": "baseline",
+    "tile": "",
+    "compile_ms": 0.0,
+    "first_launch_ms": 136.38877001358196,
+    "steady_latency_ms": 0.011059199571609496,
+    "tflops": 0.3792592739502922
+  },
+  {
+    "size": 128,
+    "backend": "Triton",
+    "variant": "best",
+    "tile": "64x64x16",
+    "compile_ms": null,
+    "first_launch_ms": 0.041790015529841185,
+    "steady_latency_ms": 0.016773120164871216,
+    "tflops": 0.25006104760307746
+  },
+  {
+    "size": 128,
+    "backend": "PTX",
+    "variant": "iter1_scalar16",
+    "tile": "16x16x16",
+    "compile_ms": 19.992551999166608,
+    "first_launch_ms": 0.05398999201133847,
+    "steady_latency_ms": 0.005877760052680969,
+    "tflops": 0.7135888437784884
+  },
+  {
+    "size": 128,
+    "backend": "PTX",
+    "variant": "iter2_scalar32",
+    "tile": "32x32x32",
+    "compile_ms": 0.22362900199368596,
+    "first_launch_ms": 0.03530003596097231,
+    "steady_latency_ms": 0.009297919869422912,
+    "tflops": 0.45110132792102936
+  },
+  {
+    "size": 128,
+    "backend": "PTX",
+    "variant": "iter3_wmma32",
+    "tile": "32x32x16-tc",
+    "compile_ms": 0.20345899974927306,
+    "first_launch_ms": 0.029480026569217443,
+    "steady_latency_ms": 0.005836799740791321,
+    "tflops": 0.7185965231404975
+  },
+  {
+    "size": 256,
+    "backend": "Torch",
+    "variant": "baseline",
+    "tile": "",
+    "compile_ms": 0.0,
+    "first_launch_ms": 0.3866289625875652,
+    "steady_latency_ms": 0.007515519857406616,
+    "tflops": 4.464685429169852
+  },
+  {
+    "size": 256,
+    "backend": "Triton",
+    "variant": "best",
+    "tile": "64x64x16",
+    "compile_ms": null,
+    "first_launch_ms": 0.039829988963902,
+    "steady_latency_ms": 0.01556480050086975,
+    "tflops": 2.1557894043116708
+  },
+  {
+    "size": 256,
+    "backend": "PTX",
+    "variant": "iter1_scalar16",
+    "tile": "16x16x16",
+    "compile_ms": 0.01278001582249999,
+    "first_launch_ms": 0.045359949581325054,
+    "steady_latency_ms": 0.019066879749298094,
+    "tflops": 1.759828164922225
+  },
+  {
+    "size": 256,
+    "backend": "PTX",
+    "variant": "iter2_scalar32",
+    "tile": "32x32x32",
+    "compile_ms": 0.011830008588731289,
+    "first_launch_ms": 0.03800005652010441,
+    "steady_latency_ms": 0.016977920532226562,
+    "tflops": 1.9763569947396564
+  },
+  {
+    "size": 256,
+    "backend": "PTX",
+    "variant": "iter3_wmma32",
+    "tile": "32x32x16-tc",
+    "compile_ms": 0.010830000974237919,
+    "first_launch_ms": 0.026469992008060217,
+    "steady_latency_ms": 0.005980160236358643,
+    "tflops": 5.610958682343185
+  },
+  {
+    "size": 512,
+    "backend": "Torch",
+    "variant": "baseline",
+    "tile": "",
+    "compile_ms": 0.0,
+    "first_launch_ms": 0.5223790067248046,
+    "steady_latency_ms": 0.008785920143127441,
+    "tflops": 30.55291325519009
+  },
+  {
+    "size": 512,
+    "backend": "Triton",
+    "variant": "best",
+    "tile": "64x64x16",
+    "compile_ms": null,
+    "first_launch_ms": 0.04160002572461963,
+    "steady_latency_ms": 0.015482879877090454,
+    "tflops": 17.337566275198956
+  },
+  {
+    "size": 512,
+    "backend": "PTX",
+    "variant": "iter1_scalar16",
+    "tile": "16x16x16",
+    "compile_ms": 0.01226901076734066,
+    "first_launch_ms": 0.12975995196029544,
+    "steady_latency_ms": 0.1023795223236084,
+    "tflops": 2.6219643333704012
+  },
+  {
+    "size": 512,
+    "backend": "PTX",
+    "variant": "iter2_scalar32",
+    "tile": "32x32x32",
+    "compile_ms": 0.014319957699626684,
+    "first_launch_ms": 0.14672003453597426,
+    "steady_latency_ms": 0.1194598388671875,
+    "tflops": 2.247076997135748
+  },
+  {
+    "size": 512,
+    "backend": "PTX",
+    "variant": "iter3_wmma32",
+    "tile": "32x32x16-tc",
+    "compile_ms": 0.01091999001801014,
+    "first_launch_ms": 0.04390999674797058,
+    "steady_latency_ms": 0.023553919792175294,
+    "tflops": 11.396636244349244
+  },
+  {
+    "size": 1024,
+    "backend": "Torch",
+    "variant": "baseline",
+    "tile": "",
+    "compile_ms": 0.0,
+    "first_launch_ms": 0.19758898997679353,
+    "steady_latency_ms": 0.04329472064971924,
+    "tflops": 49.601512973705404
+  },
+  {
+    "size": 1024,
+    "backend": "Triton",
+    "variant": "best",
+    "tile": "64x64x16",
+    "compile_ms": null,
+    "first_launch_ms": 0.08113001240417361,
+    "steady_latency_ms": 0.04634624004364014,
+    "tflops": 46.335660583855464
+  },
+  {
+    "size": 1024,
+    "backend": "PTX",
+    "variant": "iter1_scalar16",
+    "tile": "16x16x16",
+    "compile_ms": 0.012830016203224659,
+    "first_launch_ms": 0.7777679711580276,
+    "steady_latency_ms": 0.7498957061767578,
+    "tflops": 2.8637097536518192
+  },
+  {
+    "size": 1024,
+    "backend": "PTX",
+    "variant": "iter2_scalar32",
+    "tile": "32x32x32",
+    "compile_ms": 0.012549979146569967,
+    "first_launch_ms": 0.8044179994612932,
+    "steady_latency_ms": 0.7701299285888672,
+    "tflops": 2.788469280676964
+  },
+  {
+    "size": 1024,
+    "backend": "PTX",
+    "variant": "iter3_wmma32",
+    "tile": "32x32x16-tc",
+    "compile_ms": 0.012109987437725067,
+    "first_launch_ms": 0.1702099689282477,
+    "steady_latency_ms": 0.14473216056823732,
+    "tflops": 14.837639675720308
+  }
+]

@@ -1,0 +1,61 @@
+{
+  "shape": [
+    64,
+    64,
+    64
+  ],
+  "tile": [
+    32,
+    32,
+    32
+  ],
+  "grid": [
+    2,
+    2,
+    1
+  ],
+  "k_tiles": 2,
+  "max_err_exact": 768,
+  "max_err_tile_wrapped_i8": 0,
+  "sample_c_row0": [
+    -115,
+    78,
+    -142,
+    95,
+    123,
+    -159,
+    -130,
+    -76
+  ],
+  "sample_ref_exact_row0": [
+    141,
+    78,
+    114,
+    95,
+    -133,
+    -159,
+    -130,
+    180
+  ],
+  "sample_ref_tile_wrapped_row0": [
+    -115,
+    78,
+    -142,
+    95,
+    123,
+    -159,
+    -130,
+    -76
+  ],
+  "bytecode_dir": "/home/trungnt13/codes/cutile/investigations/int8_ir/bytecode",
+  "mlir_dir": "/home/trungnt13/codes/cutile/investigations/int8_ir/mlir",
+  "bytecode_files": [
+    "mm_i8.test_cutile_int8_ir_export.ln46.0ofkmuu5.tileirbc",
+    "mm_i8.test_cutile_int8_ir_export.ln48.4mncd3jv.tileirbc",
+    "mm_i8.test_cutile_int8_ir_export.ln48.l0mzx26c.tileirbc",
+    "mm_i8.test_cutile_int8_ir_export.ln48.nxhsseub.tileirbc",
+    "mm_i8.test_cutile_int8_ir_export.ln48.tudbznwx.tileirbc"
+  ],
+  "mlir_files": [],
+  "cutile_ir_file": "/home/trungnt13/codes/cutile/investigations/int8_ir/mm_i8.cutileir.txt"
+}
