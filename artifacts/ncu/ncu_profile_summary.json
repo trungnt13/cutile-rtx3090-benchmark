@@ -1,282 +1,173 @@
 [
   {
-    "dtype": "bfloat16",
-    "size": 1024,
-    "kernel": "ampere_sgemm_128x64_nn",
-    "occupancy_pct": "29.58",
-    "mem_bw": "243,848,562,482.21",
-    "registers": "122"
-  },
-  {
-    "dtype": "bfloat16",
-    "size": 1024,
-    "kernel": "ampere_bf16_s16816gemm_bf16_128x128_ldg8_f2f_stages_32x5_nn",
-    "occupancy_pct": "8.33",
-    "mem_bw": "94,589,578,872.23",
-    "registers": "222"
-  },
-  {
-    "dtype": "bfloat16",
-    "size": 1024,
-    "kernel": "matmul_tiled_bf16",
-    "occupancy_pct": "95.43",
-    "mem_bw": "7,755,129,842.49",
-    "registers": "38"
-  },
-  {
-    "dtype": "bfloat16",
-    "size": 1024,
-    "kernel": "triton_matmul_kernel",
-    "occupancy_pct": "21.89",
-    "mem_bw": "120,847,719,298.25",
-    "registers": "69"
-  },
-  {
     "dtype": "float16",
     "size": 1024,
-    "kernel": "ampere_sgemm_128x64_nn",
+    "backend": "cuBLAS (sgemm)",
+    "raw_kernel": "ampere_sgemm_128x64_nn",
     "occupancy_pct": "29.59",
-    "mem_bw": "242,967,301,677.57",
+    "mem_bw_bytes_per_sec": "242,967,301,677.57",
     "registers": "122"
   },
   {
     "dtype": "float16",
     "size": 1024,
-    "kernel": "void cutlass::Kernel2<cutlass_80_tensorop_f16_s16816gemm_rel",
+    "backend": "Torch (cutlass)",
+    "raw_kernel": "void cutlass::Kernel2<cutlass_80_tensorop_f16_s16816gemm_rel",
     "occupancy_pct": "8.33",
-    "mem_bw": "95,409,836,065.57",
+    "mem_bw_bytes_per_sec": "95,409,836,065.57",
     "registers": "224"
   },
   {
     "dtype": "float16",
     "size": 1024,
-    "kernel": "matmul_tiled_f16",
+    "backend": "cuTile",
+    "raw_kernel": "kernel",
+    "occupancy_pct": "8.32",
+    "mem_bw_bytes_per_sec": "77,344,376,634.70",
+    "registers": "103"
+  },
+  {
+    "dtype": "float16",
+    "size": 1024,
+    "backend": "PTX-inline",
+    "raw_kernel": "matmul_tiled_f16",
     "occupancy_pct": "95.45",
-    "mem_bw": "7,795,323,387.34",
+    "mem_bw_bytes_per_sec": "7,795,323,387.34",
     "registers": "38"
   },
   {
     "dtype": "float16",
     "size": 1024,
-    "kernel": "triton_matmul_kernel",
+    "backend": "Triton",
+    "raw_kernel": "triton_matmul_kernel",
     "occupancy_pct": "21.89",
-    "mem_bw": "120,636,299,929.92",
+    "mem_bw_bytes_per_sec": "120,636,299,929.92",
     "registers": "69"
   },
   {
     "dtype": "float16",
     "size": 512,
-    "kernel": "ampere_sgemm_64x32_sliced1x4_nn",
+    "backend": "cuBLAS (sgemm)",
+    "raw_kernel": "ampere_sgemm_64x32_sliced1x4_nn",
     "occupancy_pct": "25.37",
-    "mem_bw": "86,203,655,352.48",
+    "mem_bw_bytes_per_sec": "86,203,655,352.48",
     "registers": "82"
   },
   {
     "dtype": "float16",
     "size": 512,
-    "kernel": "void cutlass::Kernel2<cutlass_80_tensorop_f16_s16816gemm_rel",
+    "backend": "Torch (cutlass)",
+    "raw_kernel": "void cutlass::Kernel2<cutlass_80_tensorop_f16_s16816gemm_rel",
     "occupancy_pct": "8.33",
-    "mem_bw": "112,963,210,702.34",
+    "mem_bw_bytes_per_sec": "112,963,210,702.34",
     "registers": "96"
   },
   {
     "dtype": "float16",
     "size": 512,
-    "kernel": "matmul_tiled_f16",
+    "backend": "cuTile",
+    "raw_kernel": "kernel",
+    "occupancy_pct": "8.30",
+    "mem_bw_bytes_per_sec": "123,422,096,317.28",
+    "registers": "255"
+  },
+  {
+    "dtype": "float16",
+    "size": 512,
+    "backend": "PTX-inline",
+    "raw_kernel": "matmul_tiled_f16",
     "occupancy_pct": "82.60",
-    "mem_bw": "10,277,037,496.13",
+    "mem_bw_bytes_per_sec": "10,277,037,496.13",
     "registers": "38"
   },
   {
     "dtype": "float16",
     "size": 512,
-    "kernel": "triton_matmul_kernel",
+    "backend": "Triton",
+    "raw_kernel": "triton_matmul_kernel",
     "occupancy_pct": "8.29",
-    "mem_bw": "113,283,276,450.51",
+    "mem_bw_bytes_per_sec": "113,283,276,450.51",
     "registers": "138"
+  },
+  {
+    "dtype": "bfloat16",
+    "size": 1024,
+    "backend": "cuBLAS (sgemm)",
+    "raw_kernel": "ampere_sgemm_128x64_nn",
+    "occupancy_pct": "29.58",
+    "mem_bw_bytes_per_sec": "243,848,562,482.21",
+    "registers": "122"
+  },
+  {
+    "dtype": "bfloat16",
+    "size": 1024,
+    "backend": "cuTile",
+    "raw_kernel": "kernel",
+    "occupancy_pct": "13.56",
+    "mem_bw_bytes_per_sec": "89,864,372,469.64",
+    "registers": "108"
+  },
+  {
+    "dtype": "bfloat16",
+    "size": 1024,
+    "backend": "PTX-inline",
+    "raw_kernel": "matmul_tiled_bf16",
+    "occupancy_pct": "95.43",
+    "mem_bw_bytes_per_sec": "7,755,129,842.49",
+    "registers": "38"
+  },
+  {
+    "dtype": "bfloat16",
+    "size": 1024,
+    "backend": "Triton",
+    "raw_kernel": "triton_matmul_kernel",
+    "occupancy_pct": "21.89",
+    "mem_bw_bytes_per_sec": "120,847,719,298.25",
+    "registers": "69"
   },
   {
     "dtype": "float32",
     "size": 1024,
-    "kernel": "ampere_sgemm_128x64_nn",
+    "backend": "cuBLAS (sgemm)",
+    "raw_kernel": "ampere_sgemm_128x64_nn",
     "occupancy_pct": "29.59",
-    "mem_bw": "243,521,503,845.06",
+    "mem_bw_bytes_per_sec": "243,521,503,845.06",
     "registers": "122"
   },
   {
     "dtype": "float32",
     "size": 1024,
-    "kernel": "void cutlass::Kernel2<cutlass_80_tensorop_s1688gemm_128x128_",
+    "backend": "Torch (cutlass)",
+    "raw_kernel": "void cutlass::Kernel2<cutlass_80_tensorop_s1688gemm_128x128_",
     "occupancy_pct": "8.33",
-    "mem_bw": "112,914,764,079.15",
+    "mem_bw_bytes_per_sec": "112,914,764,079.15",
     "registers": "224"
   },
   {
     "dtype": "float32",
     "size": 1024,
-    "kernel": "matmul_tiled_f32",
+    "backend": "cuTile",
+    "raw_kernel": "kernel",
+    "occupancy_pct": "16.65",
+    "mem_bw_bytes_per_sec": "25,879,779,329.70",
+    "registers": "255"
+  },
+  {
+    "dtype": "float32",
+    "size": 1024,
+    "backend": "PTX-inline",
+    "raw_kernel": "matmul_tiled_f32",
     "occupancy_pct": "95.35",
-    "mem_bw": "15,626,950,959.49",
+    "mem_bw_bytes_per_sec": "15,626,950,959.49",
     "registers": "38"
   },
   {
     "dtype": "float32",
     "size": 1024,
-    "kernel": "triton_matmul_kernel",
+    "backend": "Triton",
+    "raw_kernel": "triton_matmul_kernel",
     "occupancy_pct": "19.91",
-    "mem_bw": "157,953,358,858.34",
+    "mem_bw_bytes_per_sec": "157,953,358,858.34",
     "registers": "72"
-  },
-  {
-    "dtype": "bfloat16",
-    "size": 1024,
-    "kernel": "void at::<unnamed>::distribution_elementwise_grid_stride_ker",
-    "occupancy_pct": "69.64",
-    "mem_bw": "107,782,051,282.05",
-    "registers": "40"
-  },
-  {
-    "dtype": "bfloat16",
-    "size": 1024,
-    "kernel": "void at::vectorized_elementwise_kernel<4, at::bfloat16_copy_",
-    "occupancy_pct": "58.74",
-    "mem_bw": "607,229,357,798.17",
-    "registers": "30"
-  },
-  {
-    "dtype": "bfloat16",
-    "size": 1024,
-    "kernel": "void at::unrolled_elementwise_kernel<at::direct_copy_kernel_",
-    "occupancy_pct": "80.13",
-    "mem_bw": "317,866,666,666.67",
-    "registers": "32"
-  },
-  {
-    "dtype": "bfloat16",
-    "size": 1024,
-    "kernel": "void at::vectorized_elementwise_kernel<4, at::CUDAFunctor_ad",
-    "occupancy_pct": "74.78",
-    "mem_bw": "732,940,594,059.41",
-    "registers": "38"
-  },
-  {
-    "dtype": "bfloat16",
-    "size": 1024,
-    "kernel": "void at::vectorized_elementwise_kernel<4, at::AbsFunctor<flo",
-    "occupancy_pct": "65.00",
-    "mem_bw": "660,995,983,935.74",
-    "registers": "30"
-  },
-  {
-    "dtype": "bfloat16",
-    "size": 1024,
-    "kernel": "void at::reduce_kernel<512, 1, at::ReduceOp<float, at::func_",
-    "occupancy_pct": "51.72",
-    "mem_bw": "391,492,625,368.73",
-    "registers": "32"
-  },
-  {
-    "dtype": "float16",
-    "size": 1024,
-    "kernel": "void at::<unnamed>::distribution_elementwise_grid_stride_ker",
-    "occupancy_pct": "69.98",
-    "mem_bw": "106,730,158,730.16",
-    "registers": "40"
-  },
-  {
-    "dtype": "float16",
-    "size": 1024,
-    "kernel": "void at::vectorized_elementwise_kernel<4, at::float16_copy_k",
-    "occupancy_pct": "59.89",
-    "mem_bw": "605,695,852,534.56",
-    "registers": "30"
-  },
-  {
-    "dtype": "float16",
-    "size": 1024,
-    "kernel": "void at::unrolled_elementwise_kernel<at::direct_copy_kernel_",
-    "occupancy_pct": "75.34",
-    "mem_bw": "321,723,472,668.81",
-    "registers": "32"
-  },
-  {
-    "dtype": "float16",
-    "size": 1024,
-    "kernel": "void at::vectorized_elementwise_kernel<4, at::CUDAFunctor_ad",
-    "occupancy_pct": "74.03",
-    "mem_bw": "736,752,475,247.52",
-    "registers": "38"
-  },
-  {
-    "dtype": "float16",
-    "size": 1024,
-    "kernel": "void at::vectorized_elementwise_kernel<4, at::AbsFunctor<flo",
-    "occupancy_pct": "64.54",
-    "mem_bw": "668,536,585,365.85",
-    "registers": "30"
-  },
-  {
-    "dtype": "float16",
-    "size": 1024,
-    "kernel": "void at::reduce_kernel<512, 1, at::ReduceOp<float, at::func_",
-    "occupancy_pct": "51.67",
-    "mem_bw": "393,827,893,175.07",
-    "registers": "32"
-  },
-  {
-    "dtype": "float16",
-    "size": 512,
-    "kernel": "void at::<unnamed>::distribution_elementwise_grid_stride_ker",
-    "occupancy_pct": "70.98",
-    "mem_bw": "1,805,714,285.71",
-    "registers": "40"
-  },
-  {
-    "dtype": "float16",
-    "size": 512,
-    "kernel": "void at::unrolled_elementwise_kernel<at::direct_copy_kernel_",
-    "occupancy_pct": "48.19",
-    "mem_bw": "123,375,886,524.82",
-    "registers": "32"
-  },
-  {
-    "dtype": "float16",
-    "size": 512,
-    "kernel": "void at::reduce_kernel<512, 1, at::ReduceOp<float, at::func_",
-    "occupancy_pct": "33.19",
-    "mem_bw": "148,987,012,987.01",
-    "registers": "32"
-  },
-  {
-    "dtype": "float32",
-    "size": 1024,
-    "kernel": "void at::<unnamed>::distribution_elementwise_grid_stride_ker",
-    "occupancy_pct": "69.69",
-    "mem_bw": "109,929,712,460.06",
-    "registers": "40"
-  },
-  {
-    "dtype": "float32",
-    "size": 1024,
-    "kernel": "void at::vectorized_elementwise_kernel<4, at::CUDAFunctor_ad",
-    "occupancy_pct": "76.31",
-    "mem_bw": "734,168,316,831.68",
-    "registers": "38"
-  },
-  {
-    "dtype": "float32",
-    "size": 1024,
-    "kernel": "void at::vectorized_elementwise_kernel<4, at::AbsFunctor<flo",
-    "occupancy_pct": "64.27",
-    "mem_bw": "654,374,501,992.03",
-    "registers": "30"
-  },
-  {
-    "dtype": "float32",
-    "size": 1024,
-    "kernel": "void at::reduce_kernel<512, 1, at::ReduceOp<float, at::func_",
-    "occupancy_pct": "51.70",
-    "mem_bw": "396,179,104,477.61",
-    "registers": "32"
   }
 ]

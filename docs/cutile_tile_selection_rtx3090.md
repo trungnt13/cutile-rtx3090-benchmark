@@ -61,7 +61,7 @@ The untuned sweep is stuck at 64x64x64 for large sizes because symmetric tiles c
 | 4096 | 2 | 1024 | Occ=2 dominates across large sizes |
 | 8192 | 2 | 4096 | Consistent with 4096 |
 
-Occupancy=2 wins almost universally. NCU profiling shows why: cuTile PTX kernel at 95% occupancy achieves only 7.8 GB/s bandwidth (compute-starved); Triton at 22% occupancy reaches 121 GB/s. Higher occupancy is not monotonically better -- per-CTA efficiency matters more.
+Occupancy=2 wins almost universally. NCU profiling at FP16 1024 reveals: cuTile achieves only 8.3% occupancy (103 registers) with 76.7 GB/s bandwidth, while Triton at 21.9% occupancy (69 registers) reaches 120.6 GB/s and cuBLAS at 29.6% occupancy hits 243 GB/s. Meanwhile PTX at 95% occupancy (38 registers) manages only 7.8 GB/s. The lesson: occupancy alone is not the bottleneck — memory access efficiency and register-enabled data reuse determine actual throughput.
 
 ## Other Dtypes
 

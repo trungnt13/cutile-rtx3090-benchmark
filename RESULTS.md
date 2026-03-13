@@ -54,16 +54,17 @@
 ![% of peak throughput](artifacts/full/comparison_pct_peak.png)
 *Achieved throughput as percentage of RTX 3090 theoretical peak.*
 
-## NCU Profiling (at 1024)
+## NCU Profiling (FP16 at 1024)
 
-| Kernel | Occupancy | Registers | Mem BW (GB/s) |
-|--------|-----------|-----------|---------------|
-| PTX matmul_tiled_f16 | 95.4% | 38 | 7.8 |
-| Triton matmul_kernel | 21.9% | 69 | 121 |
-| cuBLAS ampere_sgemm | 29.6% | 122 | 243 |
-| Torch cutlass GEMM | 8.3% | 224 | 95 |
+| Backend | Occupancy | Registers | Mem BW (GB/s) |
+|---------|-----------|-----------|---------------|
+| cuTile | 8.3% | 103 | 76.7 |
+| PTX-inline | 95.4% | 38 | 7.8 |
+| Triton | 21.9% | 69 | 120.6 |
+| cuBLAS (sgemm) | 29.6% | 122 | 243.0 |
+| Torch (cutlass) | 8.3% | 224 | 95.4 |
 
-High occupancy does not imply high performance. PTX achieves 95% occupancy but is the slowest kernel — it uses too few registers to exploit data reuse, starving the ALUs despite full SM utilization.
+cuTile and Torch (cutlass) share the lowest occupancy tier (8.3%) but for different reasons: cuTile uses 103 registers per thread, Torch cutlass uses 224. cuTile achieves less memory bandwidth (76.7 GB/s) than Triton (120.6) or cuBLAS (243), pointing to scheduling or memory access pattern inefficiency as the primary bottleneck — not register count alone. PTX achieves 95% occupancy but is the slowest kernel, confirming that occupancy without effective data reuse is worthless.
 
 ## Cost Model
 
