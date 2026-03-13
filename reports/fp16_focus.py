@@ -35,7 +35,7 @@ plt.rcParams.update(
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 OUTDIR = PROJECT_ROOT / "artifacts" / "fp16_focus"
 
-SIZES = [128, 256, 512, 1024]
+SIZES = [128, 256, 512, 1024, 2048, 4096, 8192]
 CUTILE_TILES = [
     (32, 32, 32),
     (64, 64, 32),
@@ -69,6 +69,8 @@ class Row:
     first_launch_ms: float | None
     steady_latency_ms: float
     tflops: float
+    latency_std_ms: float
+    pct_peak: float
     max_err: float | None
 
 
@@ -89,8 +91,11 @@ def collect_torch(a, b, size: int) -> Row:
 
     c = torch.empty((size, size), device="cuda", dtype=torch.float16)
     first_launch_ms = bench.measure_host_ms(lambda: bench.run_torch(a, b, c, "float16"))
-    steady = bench.benchmark_ms_torch(lambda: bench.run_torch(a, b, c, "float16"), WARMUP, ITERS)
-    return Row("Torch", size, None, None, None, None, 0.0, first_launch_ms, steady, metric_tflops(size, steady), 0.0)
+    timing = bench.benchmark_ms_torch(lambda: bench.run_torch(a, b, c, "float16"), WARMUP, ITERS)
+    steady = timing.mean
+    std = timing.std
+    tflops_val = metric_tflops(size, steady)
+    return Row("Torch", size, None, None, None, None, 0.0, first_launch_ms, steady, tflops_val, std, bench.pct_of_peak("float16", tflops_val), 0.0)
 
 
 def collect_triton(a, b, reference, size: int) -> list[Row]:
@@ -102,14 +107,17 @@ def collect_triton(a, b, reference, size: int) -> list[Row]:
         first_launch_ms = bench.measure_host_ms(
             lambda: bench.run_triton(a, b, c, size, size, size, tile_m, tile_n, tile_k, bench.triton_out_dtype("float16"))
         )
-        steady = bench.benchmark_ms_torch(
+        timing = bench.benchmark_ms_torch(
             lambda: bench.run_triton(a, b, c, size, size, size, tile_m, tile_n, tile_k, bench.triton_out_dtype("float16")),
             WARMUP,
             ITERS,
         )
+        steady = timing.mean
+        std = timing.std
         err = float((c - reference).abs().max().item())
+        tflops_val = metric_tflops(size, steady)
         rows.append(
-            Row("Triton", size, tile_m, tile_n, tile_k, None, None, first_launch_ms, steady, metric_tflops(size, steady), err)
+            Row("Triton", size, tile_m, tile_n, tile_k, None, None, first_launch_ms, steady, tflops_val, std, bench.pct_of_peak("float16", tflops_val), err)
         )
     return rows
 
@@ -128,12 +136,15 @@ def collect_cutile(a, b, reference, size: int) -> list[Row]:
                 first_launch_ms = bench.measure_host_ms(
                     lambda: bench.run_cutile(kernel, a, b, c, size, size, size, tile_m, tile_n, tile_k)
                 )
-                steady = bench.benchmark_ms_cupy(
+                timing = bench.benchmark_ms_cupy(
                     lambda: bench.run_cutile(kernel, a, b, c, size, size, size, tile_m, tile_n, tile_k),
                     WARMUP,
                     ITERS,
                 )
+                steady = timing.mean
+                std = timing.std
                 err = float((c - reference).abs().max().item())
+                tflops_val = metric_tflops(size, steady)
                 rows.append(
                     Row(
                         "cuTile",
@@ -145,7 +156,9 @@ def collect_cutile(a, b, reference, size: int) -> list[Row]:
                         compile_ms,
                         first_launch_ms,
                         steady,
-                        metric_tflops(size, steady),
+                        tflops_val,
+                        std,
+                        bench.pct_of_peak("float16", tflops_val),
                         err,
                     )
                 )
@@ -300,7 +313,9 @@ def is_pareto_optimal(points: list[tuple[float, float]]) -> list[bool]:
 def plot_fp16_pareto_tradeoff(rows: list[Row], out_path: Path) -> None:
     """Plot throughput-vs-latency scatter plots for the curated FP16 comparison set."""
 
-    fig, axes = plt.subplots(2, 2, figsize=(13, 9))
+    ncols = min(4, len(SIZES))
+    nrows = (len(SIZES) + ncols - 1) // ncols
+    fig, axes = plt.subplots(nrows, ncols, figsize=(ncols * 5, nrows * 5))
     entities = ["Torch", "Triton-best", "cuTile-best", "cuTile 32³", "cuTile 64³", "cuTile 128³"]
     style = {
         "Torch": {"color": "#444444", "marker": "s"},
@@ -314,7 +329,12 @@ def plot_fp16_pareto_tradeoff(rows: list[Row], out_path: Path) -> None:
         plt.Line2D([], [], color=style[entity]["color"], marker=style[entity]["marker"], linestyle="", markersize=8, label=entity)
         for entity in entities
     ]
-    for axis, size in zip(axes.flat, SIZES, strict=True):
+    all_axes = axes.flat if hasattr(axes, 'flat') else [axes]
+    for idx, axis in enumerate(all_axes):
+        if idx >= len(SIZES):
+            axis.set_visible(False)
+            continue
+        size = SIZES[idx]
         subset = [row for row in rows if row.size == size]
         points = []
         for entity in entities:
@@ -324,6 +344,8 @@ def plot_fp16_pareto_tradeoff(rows: list[Row], out_path: Path) -> None:
             style_entry = style[entity]
             neg_latency = -row.steady_latency_ms
             axis.scatter(neg_latency, row.tflops, s=80, color=style_entry["color"], marker=style_entry["marker"], label=entity)
+            if row is not None and row.latency_std_ms > 0:
+                axis.errorbar(neg_latency, row.tflops, xerr=row.latency_std_ms, fmt='none', ecolor=style_entry["color"], alpha=0.5, capsize=2)
             if entity == "cuTile-best":
                 occ = "auto" if row.occupancy is None else str(row.occupancy)
                 axis.annotate(
@@ -399,7 +421,9 @@ def plot_fp16_pareto_tradeoff(rows: list[Row], out_path: Path) -> None:
 def plot_cutile_fp16_pareto_tiles(rows: list[Row], out_path: Path) -> None:
     """Plot Pareto frontiers restricted to the named cuTile tile families."""
 
-    fig, axes = plt.subplots(2, 2, figsize=(13, 9))
+    ncols = min(4, len(SIZES))
+    nrows = (len(SIZES) + ncols - 1) // ncols
+    fig, axes = plt.subplots(nrows, ncols, figsize=(ncols * 5, nrows * 5))
     focus_tiles = [(32, 32, 32), (64, 64, 64), (128, 128, 128)]
     style = {
         (32, 32, 32): {"color": "#ff6600", "marker": "P"},
@@ -410,7 +434,12 @@ def plot_cutile_fp16_pareto_tiles(rows: list[Row], out_path: Path) -> None:
         plt.Line2D([], [], color=style[tile]["color"], marker=style[tile]["marker"], linestyle="", markersize=8, label=f"{tile[0]}³")
         for tile in focus_tiles
     ]
-    for axis, size in zip(axes.flat, SIZES, strict=True):
+    all_axes = axes.flat if hasattr(axes, 'flat') else [axes]
+    for idx, axis in enumerate(all_axes):
+        if idx >= len(SIZES):
+            axis.set_visible(False)
+            continue
+        size = SIZES[idx]
         subset = [row for row in rows if row.backend == "cuTile" and row.size == size]
         points = []
         for tile in focus_tiles:
@@ -506,6 +535,8 @@ def build_comparison(rows: list[Row]) -> list[Row]:
                 torch_row.first_launch_ms,
                 torch_row.steady_latency_ms,
                 torch_row.tflops,
+                torch_row.latency_std_ms,
+                torch_row.pct_peak,
                 torch_row.max_err,
             )
         )
@@ -524,6 +555,8 @@ def build_comparison(rows: list[Row]) -> list[Row]:
                 triton_best.first_launch_ms,
                 triton_best.steady_latency_ms,
                 triton_best.tflops,
+                triton_best.latency_std_ms,
+                triton_best.pct_peak,
                 triton_best.max_err,
             )
         )
@@ -542,6 +575,8 @@ def build_comparison(rows: list[Row]) -> list[Row]:
                 cutile_best.first_launch_ms,
                 cutile_best.steady_latency_ms,
                 cutile_best.tflops,
+                cutile_best.latency_std_ms,
+                cutile_best.pct_peak,
                 cutile_best.max_err,
             )
         )
@@ -563,6 +598,8 @@ def build_comparison(rows: list[Row]) -> list[Row]:
                         match.first_launch_ms,
                         match.steady_latency_ms,
                         match.tflops,
+                        match.latency_std_ms,
+                        match.pct_peak,
                         match.max_err,
                     )
                 )
@@ -587,7 +624,7 @@ def write_summary(rows: list[Row], comparison: list[Row]) -> None:
         "## Best cuTile configs by size",
         "",
         *[
-            f"- {size}: {row.tile_m}x{row.tile_n}x{row.tile_k}, occupancy={row.occupancy}, {row.tflops:.2f} TFLOP/s, {row.steady_latency_ms:.3f} ms"
+            f"- {size}: {row.tile_m}x{row.tile_n}x{row.tile_k}, occupancy={row.occupancy}, {row.tflops:.2f} TFLOP/s ({row.pct_peak:.1f}% of peak), {row.steady_latency_ms:.3f} ms"
             for size, row in best_by_size.items()
         ],
         "",

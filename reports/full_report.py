@@ -26,7 +26,7 @@ OUTDIR = PROJECT_ROOT / "artifacts" / "full"
 PTX_VALIDATION_JSON = OUTDIR / "ptx_latency_validation_summary.json"
 NSYS_DIR = PROJECT_ROOT / "artifacts" / "nsys"
 
-SIZES = [128, 256, 512, 1024]
+SIZES = [128, 256, 512, 1024, 2048, 4096, 8192]
 TILES = [
     (16, 16, 16),
     (32, 32, 16),
@@ -37,9 +37,10 @@ TILES = [
     (128, 128, 128),
 ]
 DTYPES = ["float32", "float16", "bfloat16", "int8"]
-BACKENDS = ["cuTile", "PTX-inline", "Triton", "Torch"]
+BACKENDS = ["cuTile", "PTX-inline", "Triton", "Torch", "cuBLAS"]
 COMPARISON_BACKENDS = [
     "Torch",
+    "cuBLAS",
     "PTX-inline",
     "Triton",
     "cuTile 32x32x32",
@@ -66,6 +67,8 @@ class Row:
     compile_ms: float | None
     first_launch_ms: float | None
     latency_ms: float
+    latency_std_ms: float
+    pct_peak: float
     perf: float
     perf_unit: str
     max_err_exact: float | None
@@ -110,11 +113,12 @@ def collect_cutile_only_row(
     bench.run_cutile(cutile_kernel, a, b, c_cutile, a.shape[0], b.shape[1], a.shape[1], tile_m, tile_n, tile_k)
     torch.cuda.synchronize()
 
-    latency_ms = bench.benchmark_ms_cupy(
+    cutile_timing = bench.benchmark_ms_cupy(
         lambda: bench.run_cutile(cutile_kernel, a, b, c_cutile, a.shape[0], b.shape[1], a.shape[1], tile_m, tile_n, tile_k),
         WARMUP,
         ITERS,
     )
+    latency_ms = cutile_timing.mean
     perf, unit = metric_value(dtype_name, a.shape[0], b.shape[1], a.shape[1], latency_ms)
     wrapped_err = float((c_cutile - wrapped_reference).abs().max().item()) if wrapped_reference is not None else None
     tile_wrapped_err = (
@@ -134,6 +138,8 @@ def collect_cutile_only_row(
         compile_ms=compile_ms,
         first_launch_ms=first_launch_ms,
         latency_ms=latency_ms,
+        latency_std_ms=cutile_timing.std,
+        pct_peak=bench.pct_of_peak(dtype_name, perf),
         perf=perf,
         perf_unit=unit,
         max_err_exact=float((c_cutile - reference).abs().max().item()),
@@ -165,11 +171,13 @@ def collect_rows() -> list[Row]:
             bench.run_torch(a, b, torch_baseline, dtype_name)
             torch.cuda.synchronize()
             torch_first_launch_ms = bench.measure_host_ms(lambda: bench.run_torch(a, b, torch_baseline, dtype_name))
-            torch_ms = bench.benchmark_ms_torch(
+            torch_timing = bench.benchmark_ms_torch(
                 lambda: bench.run_torch(a, b, torch_baseline, dtype_name),
                 WARMUP,
                 ITERS,
             )
+            torch_ms = torch_timing.mean
+            torch_std = torch_timing.std
             torch_perf, torch_unit = metric_value(dtype_name, m, n, k, torch_ms)
             rows.append(
                 Row(
@@ -184,8 +192,41 @@ def collect_rows() -> list[Row]:
                     compile_ms=0.0,
                     first_launch_ms=torch_first_launch_ms,
                     latency_ms=torch_ms,
+                    latency_std_ms=torch_std,
+                    pct_peak=bench.pct_of_peak(dtype_name, torch_perf),
                     perf=torch_perf,
                     perf_unit=torch_unit,
+                    max_err_exact=0.0,
+                    max_err_wrapped_i8=0.0 if dtype_name == "int8" else None,
+                    max_err_tile_wrapped_i8=0.0 if dtype_name == "int8" else None,
+                )
+            )
+
+            # cuBLAS measurement
+            cublas_c = torch.empty((m, n), device="cuda", dtype=(info["torch"] if dtype_name != "int8" else torch.int32))
+            # Pre-convert to cupy for timing (zero-copy)
+            bench.run_cublas(a, b, cublas_c, dtype_name)
+            torch.cuda.synchronize()
+            cublas_first_launch_ms = bench.measure_host_ms(lambda: bench.run_cublas(a, b, cublas_c, dtype_name))
+            cublas_timing = bench.benchmark_ms_torch(
+                lambda: bench.run_cublas(a, b, cublas_c, dtype_name),
+                WARMUP,
+                ITERS,
+            )
+            cublas_perf, cublas_unit = metric_value(dtype_name, m, n, k, cublas_timing.mean)
+            rows.append(
+                Row(
+                    dtype=dtype_name,
+                    backend="cuBLAS",
+                    m=m, n=n, k=k,
+                    tile_m=None, tile_n=None, tile_k=None,
+                    compile_ms=0.0,
+                    first_launch_ms=cublas_first_launch_ms,
+                    latency_ms=cublas_timing.mean,
+                    latency_std_ms=cublas_timing.std,
+                    perf=cublas_perf,
+                    perf_unit=cublas_unit,
+                    pct_peak=bench.pct_of_peak(dtype_name, cublas_perf),
                     max_err_exact=0.0,
                     max_err_wrapped_i8=0.0 if dtype_name == "int8" else None,
                     max_err_tile_wrapped_i8=0.0 if dtype_name == "int8" else None,
@@ -213,10 +254,10 @@ def collect_rows() -> list[Row]:
                     None,
                 )
 
-                for backend_name, latency_ms, max_err in [
-                    ("cuTile", result["cutile_ms"], result["cutile_err"]),
-                    ("PTX-inline", result["ptx_ms"], result["ptx_err"]),
-                    ("Triton", result["triton_ms"], result["triton_err"]),
+                for backend_name, latency_ms, latency_std, max_err in [
+                    ("cuTile", result["cutile_ms"], result["cutile_std"], result["cutile_err"]),
+                    ("PTX-inline", result["ptx_ms"], result["ptx_std"], result["ptx_err"]),
+                    ("Triton", result["triton_ms"], result["triton_std"], result["triton_err"]),
                 ]:
                     compile_ms = None
                     first_launch_ms = None
@@ -273,6 +314,8 @@ def collect_rows() -> list[Row]:
                             compile_ms=compile_ms,
                             first_launch_ms=first_launch_ms,
                             latency_ms=latency_ms,
+                            latency_std_ms=latency_std,
+                            pct_peak=bench.pct_of_peak(dtype_name, perf),
                             perf=perf,
                             perf_unit=unit,
                             max_err_exact=max_err,
@@ -348,6 +391,10 @@ def select_comparison_rows(rows: list[Row]) -> list[Row]:
             if torch_row is not None:
                 selected.append(torch_row)
 
+            cublas_row = next((r for r in rows if r.dtype == dtype_name and r.backend == "cuBLAS" and r.m == size), None)
+            if cublas_row is not None:
+                selected.append(cublas_row)
+
             # PTX is tile-invariant in this benchmark, so the median run is more representative than taking
             # the best repeated measurement and accidentally overstating a fixed kernel.
             ptx_rows = [r for r in rows if r.dtype == dtype_name and r.backend == "PTX-inline" and r.m == size]
@@ -368,6 +415,8 @@ def select_comparison_rows(rows: list[Row]) -> list[Row]:
                         compile_ms=median.compile_ms,
                         first_launch_ms=median.first_launch_ms,
                         latency_ms=median.latency_ms,
+                        latency_std_ms=median.latency_std_ms,
+                        pct_peak=bench.pct_of_peak(dtype_name, perf),
                         perf=perf,
                         perf_unit=unit,
                         max_err_exact=median.max_err_exact,
@@ -408,6 +457,8 @@ def select_comparison_rows(rows: list[Row]) -> list[Row]:
                             compile_ms=row.compile_ms,
                             first_launch_ms=row.first_launch_ms,
                             latency_ms=row.latency_ms,
+                            latency_std_ms=row.latency_std_ms,
+                            pct_peak=row.pct_peak,
                             perf=row.perf,
                             perf_unit=row.perf_unit,
                             max_err_exact=row.max_err_exact,
@@ -437,7 +488,7 @@ def select_first_launch_rows(rows: list[Row]) -> list[Row]:
     return [
         row
         for row in comparison
-        if row.backend.startswith("cuTile ") or row.backend in ("Torch", "PTX-inline", "Triton")
+        if row.backend.startswith("cuTile ") or row.backend in ("Torch", "cuBLAS", "PTX-inline", "Triton")
     ]
 
 
@@ -456,6 +507,7 @@ def plot_metric_bar(
         "Torch": {"color": "#444444", "hatch": ""},
         "PTX-inline": {"color": "#3366cc", "hatch": ""},
         "Triton": {"color": "#11aa88", "hatch": ""},
+        "cuBLAS": {"color": "#9933cc", "hatch": ""},
         "cuTile 32x32x32": {"color": "#ff6600", "hatch": ""},
         "cuTile 64x64x64": {"color": "#ff6600", "hatch": "//"},
         "cuTile 128x128x128": {"color": "#ff6600", "hatch": "xx"},
@@ -468,20 +520,28 @@ def plot_metric_bar(
         x = list(range(len(sizes)))
         for index, backend_name in enumerate(backends):
             values = []
+            std_values = []
             for size in sizes:
                 row = next((candidate for candidate in subset if candidate.backend == backend_name and candidate.m == size), None)
                 values.append(getattr(row, metric_name) if row is not None and getattr(row, metric_name) is not None else 0.0)
+                std_values.append(row.latency_std_ms if row is not None and metric_name == "latency_ms" else 0.0)
             offsets = [xpos + (index - (len(backends) - 1) / 2) * width for xpos in x]
-            style = backend_style[backend_name]
-            axis.bar(
-                offsets,
-                values,
+            style = backend_style.get(backend_name, {"color": "#888888", "hatch": ""})
+            bar_kwargs = dict(
                 width=width,
                 label=backend_name,
                 color=style["color"],
                 hatch=style["hatch"],
                 edgecolor="#222222" if backend_name.startswith("cuTile") else style["color"],
                 linewidth=0.8 if backend_name.startswith("cuTile") else 0.0,
+            )
+            if metric_name in ("latency_ms", "perf"):
+                bar_kwargs["yerr"] = std_values
+                bar_kwargs["capsize"] = 3
+            axis.bar(
+                offsets,
+                values,
+                **bar_kwargs,
             )
         axis.set_title(dtype_name)
         axis.set_xlabel("Matrix size (M=N=K)")
@@ -547,6 +607,90 @@ def plot_cutile_tile_bars(
         axis.grid(True, alpha=0.3)
     handles, labels = axes[0, 0].get_legend_handles_labels()
     fig.legend(handles, labels, loc="upper center", ncol=3, frameon=False, bbox_to_anchor=(0.5, 0.99))
+    fig.tight_layout(rect=(0, 0, 1, 0.95))
+    fig.savefig(out_path, dpi=180)
+    plt.close(fig)
+
+
+def plot_pct_peak_bar(rows: list[Row], out_path: Path, backends: list[str]) -> None:
+    """Plot achieved % of peak throughput with a horizontal line at 100%."""
+    fig, axes = plt.subplots(2, 2, figsize=(14, 9))
+    backend_style = {
+        "Torch": {"color": "#444444", "hatch": ""},
+        "PTX-inline": {"color": "#3366cc", "hatch": ""},
+        "Triton": {"color": "#11aa88", "hatch": ""},
+        "cuBLAS": {"color": "#9933cc", "hatch": ""},
+        "cuTile 32x32x32": {"color": "#ff6600", "hatch": ""},
+        "cuTile 64x64x64": {"color": "#ff6600", "hatch": "//"},
+        "cuTile 128x128x128": {"color": "#ff6600", "hatch": "xx"},
+    }
+    sizes = sorted({row.m for row in rows})
+    width = 0.11
+    DTYPES = ["float32", "float16", "bfloat16", "int8"]
+    for axis, dtype_name in zip(axes.flat, DTYPES, strict=True):
+        subset = [row for row in rows if row.dtype == dtype_name]
+        x = list(range(len(sizes)))
+        for index, backend_name in enumerate(backends):
+            values = []
+            for size in sizes:
+                row = next((c for c in subset if c.backend == backend_name and c.m == size), None)
+                values.append(row.pct_peak if row is not None else 0.0)
+            offsets = [xpos + (index - (len(backends) - 1) / 2) * width for xpos in x]
+            style = backend_style.get(backend_name, {"color": "#888888", "hatch": ""})
+            axis.bar(offsets, values, width=width, label=backend_name, color=style["color"], hatch=style["hatch"],
+                     edgecolor="#222222" if backend_name.startswith("cuTile") else style["color"],
+                     linewidth=0.8 if backend_name.startswith("cuTile") else 0.0)
+        axis.axhline(y=100.0, color="red", linestyle="--", linewidth=1.0, alpha=0.7, label="100% peak")
+        axis.set_title(dtype_name)
+        axis.set_xlabel("Matrix size (M=N=K)")
+        axis.set_xticks(x)
+        axis.set_xticklabels([str(s) for s in sizes])
+        axis.set_ylabel("% of peak")
+        axis.grid(True, alpha=0.3)
+    handles, labels = axes[0, 0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc="upper center", ncol=6, frameon=False, bbox_to_anchor=(0.5, 0.99))
+    fig.tight_layout(rect=(0, 0, 1, 0.95))
+    fig.savefig(out_path, dpi=180)
+    plt.close(fig)
+
+
+def plot_rectangular_bar(rows: list[Row], metric_name: str, ylabel_name: str, out_path: Path, backends: list[str], logy: bool = False) -> None:
+    """Plot rectangular GEMM results as separate figures (not mixed with square)."""
+    rect_rows = [r for r in rows if r.m != r.n or r.n != r.k]
+    if not rect_rows:
+        return
+    fig, axes = plt.subplots(2, 2, figsize=(16, 10))
+    backend_style = {
+        "Torch": {"color": "#444444", "hatch": ""},
+        "cuBLAS": {"color": "#9933cc", "hatch": ""},
+        "Triton": {"color": "#11aa88", "hatch": ""},
+        "cuTile": {"color": "#ff6600", "hatch": ""},
+    }
+    DTYPES = ["float32", "float16", "bfloat16", "int8"]
+    shapes = sorted({(r.m, r.n, r.k) for r in rect_rows})
+    shape_labels = [f"{m}x{n}x{k}" for m, n, k in shapes]
+    width = 0.18
+    for axis, dtype_name in zip(axes.flat, DTYPES, strict=True):
+        subset = [r for r in rect_rows if r.dtype == dtype_name]
+        x = list(range(len(shapes)))
+        for index, backend_name in enumerate(backends):
+            values = []
+            for shape in shapes:
+                row = next((c for c in subset if c.backend == backend_name and (c.m, c.n, c.k) == shape), None)
+                values.append(getattr(row, metric_name) if row is not None and getattr(row, metric_name) is not None else 0.0)
+            offsets = [xpos + (index - (len(backends) - 1) / 2) * width for xpos in x]
+            style = backend_style.get(backend_name, {"color": "#888888", "hatch": ""})
+            axis.bar(offsets, values, width=width, label=backend_name, color=style["color"], hatch=style["hatch"])
+        axis.set_title(dtype_name)
+        axis.set_xlabel("Shape (MxNxK)")
+        axis.set_xticks(x)
+        axis.set_xticklabels(shape_labels, rotation=45, ha="right", fontsize=8)
+        axis.set_ylabel(ylabel_name)
+        if logy:
+            axis.set_yscale("log")
+        axis.grid(True, alpha=0.3)
+    handles, labels = axes[0, 0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc="upper center", ncol=4, frameon=False, bbox_to_anchor=(0.5, 0.99))
     fig.tight_layout(rect=(0, 0, 1, 0.95))
     fig.savefig(out_path, dpi=180)
     plt.close(fig)
@@ -710,6 +854,8 @@ def main() -> None:
     )
     plot_cutile_tile_bars(rows, "perf", "Performance", cutile_throughput_figure)
     plot_cutile_tile_bars(rows, "latency_ms", "Steady latency (ms)", cutile_latency_figure, logy=True)
+    pct_peak_figure = OUTDIR / "comparison_pct_peak.png"
+    plot_pct_peak_bar(comparison_rows, pct_peak_figure, COMPARISON_BACKENDS)
 
     print(
         json.dumps(
@@ -725,6 +871,7 @@ def main() -> None:
                 "first_launch_latency_figure": str(first_launch_figure),
                 "cutile_tile_throughput_figure": str(cutile_throughput_figure),
                 "cutile_tile_latency_figure": str(cutile_latency_figure),
+                "pct_peak_figure": str(pct_peak_figure),
                 "report_summary": str(report_summary),
             },
             indent=2,

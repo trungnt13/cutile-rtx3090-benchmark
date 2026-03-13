@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import argparse
 import time
+from collections import namedtuple
 from pathlib import Path
 from textwrap import dedent
 
@@ -17,6 +18,22 @@ import triton
 import triton.language as tl
 from cuda.tile._compile import compile_tile, default_tile_context
 from cuda.tile._compiler_options import CompilerOptions
+
+
+TimingResult = namedtuple("TimingResult", ["mean", "std"])
+
+# RTX 3090 peak theoretical throughput by dtype (TFLOP/s or TOP/s).
+PEAK_TFLOPS = {"float16": 142.0, "bfloat16": 142.0, "float32": 35.6, "int8": 284.0}
+
+# Rectangular GEMM shapes representative of MLP and attention-like workloads.
+RECTANGULAR_SHAPES = [
+    (4096, 4096, 128),
+    (4096, 4096, 256),
+    (4096, 4096, 512),
+    (512, 64, 512),
+    (1024, 64, 1024),
+    (2048, 64, 2048),
+]
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -394,46 +411,57 @@ def compile_cutile_kernel(kernel, args, num_ctas: int | None, occupancy: int | N
     )
 
 
-def benchmark_ms_cupy(fn, warmup: int, iters: int) -> float:
+def pct_of_peak(dtype_name: str, achieved_tflops: float) -> float:
+    """Return achieved throughput as a percentage of the RTX 3090 theoretical peak."""
+
+    return (achieved_tflops / PEAK_TFLOPS.get(dtype_name, 35.6)) * 100.0
+
+
+def benchmark_ms_cupy(fn, warmup: int, iters: int) -> TimingResult:
     """Measure steady-state GPU time with CuPy events.
 
     Warmup happens before recording so JIT, cache fill, and lazy init costs are kept
-    out of the steady-state number.
+    out of the steady-state number. Returns (mean, std) over per-iteration measurements.
     """
 
     for _ in range(warmup):
         fn()
     cp.cuda.get_current_stream().synchronize()
 
-    start = cp.cuda.Event()
-    stop = cp.cuda.Event()
-    start.record()
+    times = []
     for _ in range(iters):
+        start = cp.cuda.Event()
+        stop = cp.cuda.Event()
+        start.record()
         fn()
-    stop.record()
-    stop.synchronize()
-    return cp.cuda.get_elapsed_time(start, stop) / iters
+        stop.record()
+        stop.synchronize()
+        times.append(cp.cuda.get_elapsed_time(start, stop))
+    return TimingResult(float(np.mean(times)), float(np.std(times)))
 
 
-def benchmark_ms_torch(fn, warmup: int, iters: int) -> float:
+def benchmark_ms_torch(fn, warmup: int, iters: int) -> TimingResult:
     """Measure steady-state GPU time with Torch events.
 
     Triton integrates cleanly with Torch's event/timing stack, so this path mirrors the
     same warmup policy but uses Torch-owned events instead of CuPy-owned ones.
+    Returns (mean, std) over per-iteration measurements.
     """
 
     for _ in range(warmup):
         fn()
     torch.cuda.synchronize()
 
-    start = torch.cuda.Event(enable_timing=True)
-    stop = torch.cuda.Event(enable_timing=True)
-    start.record()
+    times = []
     for _ in range(iters):
+        start = torch.cuda.Event(enable_timing=True)
+        stop = torch.cuda.Event(enable_timing=True)
+        start.record()
         fn()
-    stop.record()
-    stop.synchronize()
-    return start.elapsed_time(stop) / iters
+        stop.record()
+        stop.synchronize()
+        times.append(start.elapsed_time(stop))
+    return TimingResult(float(np.mean(times)), float(np.std(times)))
 
 
 def sync_all() -> None:
@@ -522,6 +550,32 @@ def run_torch(a, b, c, dtype_name: str) -> None:
         torch.mm(a, b, out=c)
 
 
+def run_cublas(a, b, c, dtype_name: str) -> None:
+    """Run a direct cuBLAS GEMM via CuPy, using cupy.matmul on DLPack-transferred arrays.
+
+    This avoids Torch's dispatcher overhead while still going through cuBLAS internally
+    (CuPy dispatches to cuBLAS for supported types). Pre-conversion happens outside the
+    timing loop so DLPack overhead is excluded from measurement.
+    """
+
+    if dtype_name == "int8":
+        # cuBLAS int8 GEMM is not wired here; fall back to Torch path.
+        run_torch(a, b, c, dtype_name)
+        return
+    # Convert torch tensors to cupy arrays via DLPack (zero-copy on same device).
+    a_cp = cp.from_dlpack(a)
+    b_cp = cp.from_dlpack(b)
+    c_cp = cp.from_dlpack(c)
+    # CuPy matmul dispatches to cuBLAS for float32/float16/bfloat16.
+    # Use out= to write directly into the pre-allocated output.
+    if c.dtype == torch.float32 and a.dtype != torch.float32:
+        # Half inputs with float32 output: cast in cupy then matmul.
+        result = cp.matmul(a_cp.astype(cp.float32), b_cp.astype(cp.float32))
+        c_cp[:] = result
+    else:
+        cp.matmul(a_cp, b_cp, out=c_cp)
+
+
 def make_reference(a, b, dtype_name: str) -> torch.Tensor:
     """Build the correctness reference tensor for a benchmark case.
 
@@ -599,17 +653,17 @@ def benchmark_tile_config(
         else None
     )
 
-    cutile_ms = benchmark_ms_cupy(
+    cutile_timing = benchmark_ms_cupy(
         lambda: run_cutile(cutile_kernel, a, b, c_cutile, a.shape[0], b.shape[1], a.shape[1], tile_m, tile_n, tile_k),
         warmup,
         iters,
     )
-    ptx_ms = benchmark_ms_cupy(
+    ptx_timing = benchmark_ms_cupy(
         lambda: run_ptx(ptx_kernel, a, b, c_ptx, a.shape[0], b.shape[1], a.shape[1]),
         warmup,
         iters,
     )
-    triton_ms = benchmark_ms_torch(
+    triton_timing = benchmark_ms_torch(
         lambda: run_triton(a, b, c_triton, a.shape[0], b.shape[1], a.shape[1], tile_m, tile_n, tile_k, triton_out_dtype(dtype_name)),
         warmup,
         iters,
@@ -617,9 +671,12 @@ def benchmark_tile_config(
 
     return {
         "tile": tile_config,
-        "cutile_ms": cutile_ms,
-        "ptx_ms": ptx_ms,
-        "triton_ms": triton_ms,
+        "cutile_ms": cutile_timing.mean,
+        "cutile_std": cutile_timing.std,
+        "ptx_ms": ptx_timing.mean,
+        "ptx_std": ptx_timing.std,
+        "triton_ms": triton_timing.mean,
+        "triton_std": triton_timing.std,
         "cutile_err": cutile_max_err,
         "cutile_wrapped_err": cutile_wrapped_err,
         "cutile_chunk_wrapped_err": cutile_chunk_wrapped_err,
@@ -731,14 +788,15 @@ def main() -> None:
         )
         run_torch(a, b, torch_baseline, args.dtype)
         torch.cuda.synchronize()
-        torch_ms = benchmark_ms_torch(
+        torch_timing = benchmark_ms_torch(
             lambda: run_torch(a, b, torch_baseline, args.dtype),
             args.warmup,
             args.iters,
         )
+        torch_ms = torch_timing.mean
 
         print(f"shape: M={m} N={n} K={k}")
-        print(f"Torch:  {torch_ms:.3f} ms  {metric(args.dtype, m, n, k, torch_ms)}  baseline")
+        print(f"Torch:  {torch_ms:.3f} ms (±{torch_timing.std:.3f})  {metric(args.dtype, m, n, k, torch_ms)}  baseline")
 
         for tile_config in tile_configs:
             result = benchmark_tile_config(

@@ -91,47 +91,7 @@ python -m benchmarks.ptx_iteration_study
 
 ## Benchmark Policy
 
-- Steady-state latency is measured with Compute Unified Device Architecture (CUDA) events after warmup iterations.
-- Compile time and first-launch time are measured separately with host wall time.
-- Floating-point correctness references disable TensorFloat-32 (TF32) so the comparison is against a stricter accumulator path.
-- PTX-inline uses a fixed 16x16 tiled baseline in the main comparison. That is deliberate: the PTX path is meant to be understandable, not maximally optimized.
-- Int8 results are reported with both exact-int32 and wrapped-per-tile comparison metrics because the current cuTile path does not preserve exact int32 accumulation semantics.
-
-## Code Structure
-
-The shared benchmark logic lives in `benchmarks/core.py`. The split is intentional:
-
-```python
-def benchmark_ms_cupy(fn, warmup: int, iters: int) -> float:
-    for _ in range(warmup):
-        fn()
-    cp.cuda.get_current_stream().synchronize()
-    start = cp.cuda.Event()
-    stop = cp.cuda.Event()
-    start.record()
-```
-
-That helper exists so steady-state timing excludes just-in-time (JIT) compilation and lazy initialization costs. Compile and first-launch timings are reported by separate host-side helpers rather than being mixed into the GPU event number.
-
-The main CLI stays thin:
-
-```python
-result = core.benchmark_tile_config(
-    args.dtype,
-    a,
-    b,
-    reference,
-    wrapped_reference,
-    ptx_kernel,
-    tile_config,
-    args.warmup,
-    args.iters,
-    args.num_ctas,
-    args.occupancy,
-)
-```
-
-That keeps policy decisions readable while centralizing the backend-specific runtime logic in one place.
+See [docs/methodology.md](docs/methodology.md) for the full timing, correctness, and tile selection policies.
 
 ## Read Next
 
