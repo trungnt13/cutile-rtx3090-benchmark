@@ -2,7 +2,7 @@
 
 ## Thesis-oriented findings
 
-1. cuTile can be a throughput- and latency-competitive path on Ampere for half-precision floating-point (FP16) and brain floating point (BF16) when tile shapes are tuned.
+1. cuTile can be a throughput and latency competitive path on Ampere for FP16/BF16 when tile shapes are tuned.
 2. cuTile still has correctness and semantics issues, most clearly on the int8 path.
 3. TileIR/cuTile is promising, but the current stack needs careful validation before claiming production correctness.
 4. This artifact set does not yet prove a memory-footprint advantage; that needs a separate workspace/allocator instrumentation pass.
@@ -12,25 +12,25 @@
 The benchmark data includes average kernel latency in milliseconds for every backend, dtype, size, and tile.
 For real-time AI/ML, the low-size regime (128/256) is the most important latency view in this artifact set; throughput alone is not sufficient.
 
-- Fastest observed float16 latency: 0.005 ms on cuTile at size 128.
-- Fastest observed bfloat16 latency: 0.005 ms on cuTile at size 128.
-- Fastest observed float32 latency: 0.006 ms on PTX-inline at size 128.
-- Fastest observed int8 latency: 0.005 ms on cuTile at size 128.
+- Fastest observed float16 latency: 0.007 ms on cuTile at size 128.
+- Fastest observed bfloat16 latency: 0.007 ms on cuTile at size 128.
+- Fastest observed float32 latency: 0.012 ms on PTX-inline at size 128.
+- Fastest observed int8 latency: 0.008 ms on cuTile at size 128.
 
 Cold-start timing is also reported separately via `compile_ms` and `first_launch_ms`.
-For Parallel Thread Execution (PTX), steady-state latency excludes module compile time; compile and first-launch costs are exported separately.
+For PTX, steady-state latency excludes module compile time; compile and first-launch costs are exported separately.
 
 ## PTX timing validation
 
-- PTX validation case: `float16` at shape `128x128x128`
-- Compile time: `24.476 ms`
-- First launch time: `0.076 ms`
-- Steady-state latency: `0.013 ms`
-- Nsight Systems trace was captured with NVIDIA Tools Extension (NVTX) ranges `ptx_compile`, `ptx_first_launch`, and `ptx_steady_state` to verify the phase separation.
+- PTX validation case: `float16` at shape `1024x1024x1024`
+- Compile time: `22.416 ms`
+- First launch time: `0.811 ms`
+- Steady-state latency: `0.752 ms`
+- Nsight Systems trace was captured with NVTX ranges `ptx_compile`, `ptx_first_launch`, and `ptx_steady_state` to verify the phase separation.
 
-## Int8 intermediate representation (IR) finding
+## Int8 IR finding
 
-The exported int8 repro under `investigations/int8_ir/` shows that cuTile does not preserve exact int32 general matrix multiplication (GEMM) semantics for `i8 @ i8`.
+The exported int8 repro under `investigations/int8_ir/` shows that cuTile does not preserve exact int32 GEMM semantics for `i8 @ i8`.
 - `max_err_exact`: 768
 - `max_err_tile_wrapped_i8`: 0
 
@@ -58,20 +58,20 @@ So the int8 bug is visible directly in the cuTile IR, not just in the benchmark 
 ## Best tile notes
 
 ### float32
-- cuTile best tiles by size: 128:16x16x16, 256:32x32x16, 512:64x64x16, 1024:64x64x16
-- Triton best tiles by size: 128:64x64x64, 256:64x64x32, 512:64x64x32, 1024:64x64x32
+- cuTile best tiles by size: 128:16x16x16, 256:32x32x16, 512:64x64x16, 1024:64x64x16, 2048:64x64x16, 4096:64x64x16, 8192:64x64x16
+- Triton best tiles by size: 128:32x32x16, 256:64x64x64, 512:64x64x64, 1024:64x64x32, 2048:64x64x16, 4096:64x64x32, 8192:64x64x32
 
 ### float16
-- cuTile best tiles by size: 128:32x32x32, 256:32x32x16, 512:64x64x64, 1024:64x64x16
-- Triton best tiles by size: 128:64x64x64, 256:64x64x32, 512:64x64x64, 1024:64x64x16
+- cuTile best tiles by size: 128:32x32x32, 256:32x32x32, 512:64x64x32, 1024:64x64x16, 2048:64x64x32, 4096:64x64x64, 8192:64x64x64
+- Triton best tiles by size: 128:64x64x16, 256:64x64x64, 512:64x64x64, 1024:64x64x16, 2048:64x64x32, 4096:64x64x64, 8192:64x64x64
 
 ### bfloat16
-- cuTile best tiles by size: 128:32x32x32, 256:32x32x32, 512:64x64x32, 1024:64x64x16
-- Triton best tiles by size: 128:64x64x32, 256:16x16x16, 512:64x64x32, 1024:64x64x32
+- cuTile best tiles by size: 128:32x32x32, 256:32x32x32, 512:64x64x32, 1024:64x64x16, 2048:64x64x16, 4096:64x64x64, 8192:64x64x64
+- Triton best tiles by size: 128:64x64x32, 256:64x64x64, 512:32x32x16, 1024:64x64x16, 2048:64x64x32, 4096:64x64x64, 8192:64x64x64
 
 ### int8
-- cuTile best tiles by size: 128:64x64x64, 256:32x32x32, 512:64x64x64, 1024:64x64x64
-- Triton best tiles by size: 128:64x64x32, 256:32x32x32, 512:32x32x32, 1024:64x64x64
+- cuTile best tiles by size: 128:32x32x32, 256:32x32x32, 512:64x64x64, 1024:64x64x64, 2048:64x64x32, 4096:64x64x64, 8192:64x64x64
+- Triton best tiles by size: 128:64x64x64, 256:64x64x32, 512:32x32x32, 1024:64x64x64, 2048:64x64x64, 4096:64x64x64, 8192:64x64x64
 
 ## Artifact files
 

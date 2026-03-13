@@ -5,49 +5,49 @@
     "variant": "baseline",
     "tile": "",
     "compile_ms": 0.0,
-    "first_launch_ms": 136.38877001358196,
-    "steady_latency_ms": 0.011059199571609496,
-    "tflops": 0.3792592739502922
+    "first_launch_ms": 138.26534897089005,
+    "steady_latency_ms": 0.028032640032470225,
+    "tflops": 0.149622154572018
   },
   {
     "size": 128,
     "backend": "Triton",
     "variant": "best",
-    "tile": "64x64x16",
+    "tile": "64x64x32",
     "compile_ms": null,
-    "first_launch_ms": 0.041790015529841185,
-    "steady_latency_ms": 0.016773120164871216,
-    "tflops": 0.25006104760307746
+    "first_launch_ms": 0.05036999937146902,
+    "steady_latency_ms": 0.024656640328466893,
+    "tflops": 0.17010849589096447
   },
   {
     "size": 128,
     "backend": "PTX",
     "variant": "iter1_scalar16",
     "tile": "16x16x16",
-    "compile_ms": 19.992551999166608,
-    "first_launch_ms": 0.05398999201133847,
-    "steady_latency_ms": 0.005877760052680969,
-    "tflops": 0.7135888437784884
+    "compile_ms": 19.87525197910145,
+    "first_launch_ms": 0.04553998587653041,
+    "steady_latency_ms": 0.011462400071322917,
+    "tflops": 0.36591847901849756
   },
   {
     "size": 128,
     "backend": "PTX",
     "variant": "iter2_scalar32",
     "tile": "32x32x32",
-    "compile_ms": 0.22362900199368596,
-    "first_launch_ms": 0.03530003596097231,
-    "steady_latency_ms": 0.009297919869422912,
-    "tflops": 0.45110132792102936
+    "compile_ms": 0.2111590001732111,
+    "first_launch_ms": 0.0470699742436409,
+    "steady_latency_ms": 0.01545983973890543,
+    "tflops": 0.27130320047528256
   },
   {
     "size": 128,
     "backend": "PTX",
     "variant": "iter3_wmma32",
     "tile": "32x32x16-tc",
-    "compile_ms": 0.20345899974927306,
-    "first_launch_ms": 0.029480026569217443,
-    "steady_latency_ms": 0.005836799740791321,
-    "tflops": 0.7185965231404975
+    "compile_ms": 0.19994901958853006,
+    "first_launch_ms": 0.029850052669644356,
+    "steady_latency_ms": 0.010053759943693875,
+    "tflops": 0.4171876018017356
   },
   {
     "size": 256,
@@ -55,49 +55,49 @@
     "variant": "baseline",
     "tile": "",
     "compile_ms": 0.0,
-    "first_launch_ms": 0.3866289625875652,
-    "steady_latency_ms": 0.007515519857406616,
-    "tflops": 4.464685429169852
+    "first_launch_ms": 0.3943979972973466,
+    "steady_latency_ms": 0.022038399912416934,
+    "tflops": 1.522543929384577
   },
   {
     "size": 256,
     "backend": "Triton",
     "variant": "best",
-    "tile": "64x64x16",
+    "tile": "32x32x32",
     "compile_ms": null,
-    "first_launch_ms": 0.039829988963902,
-    "steady_latency_ms": 0.01556480050086975,
-    "tflops": 2.1557894043116708
+    "first_launch_ms": 0.04484003875404596,
+    "steady_latency_ms": 0.024207360446453094,
+    "tflops": 1.3861251859418013
   },
   {
     "size": 256,
     "backend": "PTX",
     "variant": "iter1_scalar16",
     "tile": "16x16x16",
-    "compile_ms": 0.01278001582249999,
-    "first_launch_ms": 0.045359949581325054,
-    "steady_latency_ms": 0.019066879749298094,
-    "tflops": 1.759828164922225
+    "compile_ms": 0.013530021533370018,
+    "first_launch_ms": 0.04434998845681548,
+    "steady_latency_ms": 0.025128960125148297,
+    "tflops": 1.3352893169033186
   },
   {
     "size": 256,
     "backend": "PTX",
     "variant": "iter2_scalar32",
     "tile": "32x32x32",
-    "compile_ms": 0.011830008588731289,
-    "first_launch_ms": 0.03800005652010441,
-    "steady_latency_ms": 0.016977920532226562,
-    "tflops": 1.9763569947396564
+    "compile_ms": 0.01348002115264535,
+    "first_launch_ms": 0.046639994252473116,
+    "steady_latency_ms": 0.023196800351142882,
+    "tflops": 1.446511221033413
   },
   {
     "size": 256,
     "backend": "PTX",
     "variant": "iter3_wmma32",
     "tile": "32x32x16-tc",
-    "compile_ms": 0.010830000974237919,
-    "first_launch_ms": 0.026469992008060217,
-    "steady_latency_ms": 0.005980160236358643,
-    "tflops": 5.610958682343185
+    "compile_ms": 0.01244997838512063,
+    "first_launch_ms": 0.028470007237046957,
+    "steady_latency_ms": 0.012142720278352498,
+    "tflops": 2.7633373108181822
   },
   {
     "size": 512,
@@ -105,49 +105,49 @@
     "variant": "baseline",
     "tile": "",
     "compile_ms": 0.0,
-    "first_launch_ms": 0.5223790067248046,
-    "steady_latency_ms": 0.008785920143127441,
-    "tflops": 30.55291325519009
+    "first_launch_ms": 0.5328579572960734,
+    "steady_latency_ms": 0.022999040000140667,
+    "tflops": 11.671593944719351
   },
   {
     "size": 512,
     "backend": "Triton",
     "variant": "best",
-    "tile": "64x64x16",
+    "tile": "64x64x32",
     "compile_ms": null,
-    "first_launch_ms": 0.04160002572461963,
-    "steady_latency_ms": 0.015482879877090454,
-    "tflops": 17.337566275198956
+    "first_launch_ms": 0.05063001299276948,
+    "steady_latency_ms": 0.028160000145435335,
+    "tflops": 9.532509041677427
   },
   {
     "size": 512,
     "backend": "PTX",
     "variant": "iter1_scalar16",
     "tile": "16x16x16",
-    "compile_ms": 0.01226901076734066,
-    "first_launch_ms": 0.12975995196029544,
-    "steady_latency_ms": 0.1023795223236084,
-    "tflops": 2.6219643333704012
+    "compile_ms": 0.013870012480765581,
+    "first_launch_ms": 0.12690899893641472,
+    "steady_latency_ms": 0.10860159948468208,
+    "tflops": 2.471744958395958
   },
   {
     "size": 512,
     "backend": "PTX",
     "variant": "iter2_scalar32",
     "tile": "32x32x32",
-    "compile_ms": 0.014319957699626684,
-    "first_launch_ms": 0.14672003453597426,
-    "steady_latency_ms": 0.1194598388671875,
-    "tflops": 2.247076997135748
+    "compile_ms": 0.01618999522179365,
+    "first_launch_ms": 0.14592998195439577,
+    "steady_latency_ms": 0.125664641559124,
+    "tflops": 2.136125585284097
   },
   {
     "size": 512,
     "backend": "PTX",
     "variant": "iter3_wmma32",
     "tile": "32x32x16-tc",
-    "compile_ms": 0.01091999001801014,
-    "first_launch_ms": 0.04390999674797058,
-    "steady_latency_ms": 0.023553919792175294,
-    "tflops": 11.396636244349244
+    "compile_ms": 0.012930016964673996,
+    "first_launch_ms": 0.047358975280076265,
+    "steady_latency_ms": 0.029653760455548763,
+    "tflops": 9.052324287922506
   },
   {
     "size": 1024,
@@ -155,9 +155,9 @@
     "variant": "baseline",
     "tile": "",
     "compile_ms": 0.0,
-    "first_launch_ms": 0.19758898997679353,
-    "steady_latency_ms": 0.04329472064971924,
-    "tflops": 49.601512973705404
+    "first_launch_ms": 0.2064089640043676,
+    "steady_latency_ms": 0.054207359701395036,
+    "tflops": 39.616090136644935
   },
   {
     "size": 1024,
@@ -165,38 +165,38 @@
     "variant": "best",
     "tile": "64x64x16",
     "compile_ms": null,
-    "first_launch_ms": 0.08113001240417361,
-    "steady_latency_ms": 0.04634624004364014,
-    "tflops": 46.335660583855464
+    "first_launch_ms": 0.08586002513766289,
+    "steady_latency_ms": 0.06458751946687698,
+    "tflops": 33.24920457893284
   },
   {
     "size": 1024,
     "backend": "PTX",
     "variant": "iter1_scalar16",
     "tile": "16x16x16",
-    "compile_ms": 0.012830016203224659,
-    "first_launch_ms": 0.7777679711580276,
-    "steady_latency_ms": 0.7498957061767578,
-    "tflops": 2.8637097536518192
+    "compile_ms": 0.014129967894405127,
+    "first_launch_ms": 0.7790779927745461,
+    "steady_latency_ms": 0.7580422341823578,
+    "tflops": 2.832934038716624
   },
   {
     "size": 1024,
     "backend": "PTX",
     "variant": "iter2_scalar32",
     "tile": "32x32x32",
-    "compile_ms": 0.012549979146569967,
-    "first_launch_ms": 0.8044179994612932,
-    "steady_latency_ms": 0.7701299285888672,
-    "tflops": 2.788469280676964
+    "compile_ms": 0.014789984561502934,
+    "first_launch_ms": 0.8063679561018944,
+    "steady_latency_ms": 0.7554246294498443,
+    "tflops": 2.8427503741358753
   },
   {
     "size": 1024,
     "backend": "PTX",
     "variant": "iter3_wmma32",
     "tile": "32x32x16-tc",
-    "compile_ms": 0.012109987437725067,
-    "first_launch_ms": 0.1702099689282477,
-    "steady_latency_ms": 0.14473216056823732,
-    "tflops": 14.837639675720308
+    "compile_ms": 0.014810007996857166,
+    "first_launch_ms": 0.16389903612434864,
+    "steady_latency_ms": 0.1488032004237175,
+    "tflops": 14.431703363133552
   }
 ]

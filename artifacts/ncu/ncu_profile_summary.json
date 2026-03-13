@@ -1,0 +1,46 @@
+[
+  {
+    "config": {
+      "dtype": "float16",
+      "m": 1024,
+      "n": 1024,
+      "k": 1024,
+      "tile": "128,64,64"
+    },
+    "status": "needs_sudo",
+    "command": "sudo /usr/local/cuda-13.2/bin/ncu --metrics sm__warps_active.avg.pct_of_peak_sustained_active,dram__bytes.sum.per_second,launch__registers_per_thread,sm__sass_thread_inst_executed_op_fadd_pred_on.sum,sm__sass_thread_inst_executed_op_fmul_pred_on.sum,sm__sass_thread_inst_executed_op_ffma_pred_on.sum --csv --target-processes all --set full -o /home/trungnt13/codes/cutile/artifacts/ncu/profile_float16_1024 python -m benchmarks.matmul_sweep --dtype float16 --sizes 1024,1024,1024 --tile-sweep 128,64,64 --iters 3 --warmup 1"
+  },
+  {
+    "config": {
+      "dtype": "float16",
+      "m": 512,
+      "n": 512,
+      "k": 512,
+      "tile": "64,64,64"
+    },
+    "status": "needs_sudo",
+    "command": "sudo /usr/local/cuda-13.2/bin/ncu --metrics sm__warps_active.avg.pct_of_peak_sustained_active,dram__bytes.sum.per_second,launch__registers_per_thread,sm__sass_thread_inst_executed_op_fadd_pred_on.sum,sm__sass_thread_inst_executed_op_fmul_pred_on.sum,sm__sass_thread_inst_executed_op_ffma_pred_on.sum --csv --target-processes all --set full -o /home/trungnt13/codes/cutile/artifacts/ncu/profile_float16_512 python -m benchmarks.matmul_sweep --dtype float16 --sizes 512,512,512 --tile-sweep 64,64,64 --iters 3 --warmup 1"
+  },
+  {
+    "config": {
+      "dtype": "bfloat16",
+      "m": 1024,
+      "n": 1024,
+      "k": 1024,
+      "tile": "64,64,16"
+    },
+    "status": "needs_sudo",
+    "command": "sudo /usr/local/cuda-13.2/bin/ncu --metrics sm__warps_active.avg.pct_of_peak_sustained_active,dram__bytes.sum.per_second,launch__registers_per_thread,sm__sass_thread_inst_executed_op_fadd_pred_on.sum,sm__sass_thread_inst_executed_op_fmul_pred_on.sum,sm__sass_thread_inst_executed_op_ffma_pred_on.sum --csv --target-processes all --set full -o /home/trungnt13/codes/cutile/artifacts/ncu/profile_bfloat16_1024 python -m benchmarks.matmul_sweep --dtype bfloat16 --sizes 1024,1024,1024 --tile-sweep 64,64,16 --iters 3 --warmup 1"
+  },
+  {
+    "config": {
+      "dtype": "float32",
+      "m": 1024,
+      "n": 1024,
+      "k": 1024,
+      "tile": "64,64,16"
+    },
+    "status": "needs_sudo",
+    "command": "sudo /usr/local/cuda-13.2/bin/ncu --metrics sm__warps_active.avg.pct_of_peak_sustained_active,dram__bytes.sum.per_second,launch__registers_per_thread,sm__sass_thread_inst_executed_op_fadd_pred_on.sum,sm__sass_thread_inst_executed_op_fmul_pred_on.sum,sm__sass_thread_inst_executed_op_ffma_pred_on.sum --csv --target-processes all --set full -o /home/trungnt13/codes/cutile/artifacts/ncu/profile_float32_1024 python -m benchmarks.matmul_sweep --dtype float32 --sizes 1024,1024,1024 --tile-sweep 64,64,16 --iters 3 --warmup 1"
+  }
+]

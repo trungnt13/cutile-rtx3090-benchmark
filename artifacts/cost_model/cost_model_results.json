@@ -1,0 +1,212 @@
+{
+  "model": {
+    "alpha": 9.021272222478762e-10,
+    "beta": 8.965006849006364e-07,
+    "r_squared": 0.19822455667746186,
+    "n_points": 175,
+    "mean_abs_error_ms": 97.976374924748
+  },
+  "predictions": {
+    "accuracy": 0.0,
+    "correct": 0,
+    "total": 28,
+    "details": [
+      {
+        "dtype": "bfloat16",
+        "size": 128,
+        "actual_best_tile": "32x32x32",
+        "predicted_best_tile": "128x128x128",
+        "correct": false
+      },
+      {
+        "dtype": "bfloat16",
+        "size": 256,
+        "actual_best_tile": "32x32x32",
+        "predicted_best_tile": "128x128x128",
+        "correct": false
+      },
+      {
+        "dtype": "bfloat16",
+        "size": 512,
+        "actual_best_tile": "64x64x32",
+        "predicted_best_tile": "128x128x128",
+        "correct": false
+      },
+      {
+        "dtype": "bfloat16",
+        "size": 1024,
+        "actual_best_tile": "64x64x16",
+        "predicted_best_tile": "128x128x128",
+        "correct": false
+      },
+      {
+        "dtype": "bfloat16",
+        "size": 2048,
+        "actual_best_tile": "64x64x16",
+        "predicted_best_tile": "128x128x128",
+        "correct": false
+      },
+      {
+        "dtype": "bfloat16",
+        "size": 4096,
+        "actual_best_tile": "64x64x64",
+        "predicted_best_tile": "128x128x128",
+        "correct": false
+      },
+      {
+        "dtype": "bfloat16",
+        "size": 8192,
+        "actual_best_tile": "64x64x64",
+        "predicted_best_tile": "128x128x128",
+        "correct": false
+      },
+      {
+        "dtype": "float16",
+        "size": 128,
+        "actual_best_tile": "32x32x32",
+        "predicted_best_tile": "128x128x128",
+        "correct": false
+      },
+      {
+        "dtype": "float16",
+        "size": 256,
+        "actual_best_tile": "32x32x32",
+        "predicted_best_tile": "128x128x128",
+        "correct": false
+      },
+      {
+        "dtype": "float16",
+        "size": 512,
+        "actual_best_tile": "64x64x32",
+        "predicted_best_tile": "128x128x128",
+        "correct": false
+      },
+      {
+        "dtype": "float16",
+        "size": 1024,
+        "actual_best_tile": "64x64x16",
+        "predicted_best_tile": "128x128x128",
+        "correct": false
+      },
+      {
+        "dtype": "float16",
+        "size": 2048,
+        "actual_best_tile": "64x64x32",
+        "predicted_best_tile": "128x128x128",
+        "correct": false
+      },
+      {
+        "dtype": "float16",
+        "size": 4096,
+        "actual_best_tile": "64x64x64",
+        "predicted_best_tile": "128x128x128",
+        "correct": false
+      },
+      {
+        "dtype": "float16",
+        "size": 8192,
+        "actual_best_tile": "64x64x64",
+        "predicted_best_tile": "128x128x128",
+        "correct": false
+      },
+      {
+        "dtype": "float32",
+        "size": 128,
+        "actual_best_tile": "16x16x16",
+        "predicted_best_tile": "128x128x128",
+        "correct": false
+      },
+      {
+        "dtype": "float32",
+        "size": 256,
+        "actual_best_tile": "32x32x16",
+        "predicted_best_tile": "128x128x128",
+        "correct": false
+      },
+      {
+        "dtype": "float32",
+        "size": 512,
+        "actual_best_tile": "64x64x16",
+        "predicted_best_tile": "128x128x128",
+        "correct": false
+      },
+      {
+        "dtype": "float32",
+        "size": 1024,
+        "actual_best_tile": "64x64x16",
+        "predicted_best_tile": "128x128x128",
+        "correct": false
+      },
+      {
+        "dtype": "float32",
+        "size": 2048,
+        "actual_best_tile": "64x64x16",
+        "predicted_best_tile": "128x128x128",
+        "correct": false
+      },
+      {
+        "dtype": "float32",
+        "size": 4096,
+        "actual_best_tile": "64x64x16",
+        "predicted_best_tile": "128x128x128",
+        "correct": false
+      },
+      {
+        "dtype": "float32",
+        "size": 8192,
+        "actual_best_tile": "64x64x16",
+        "predicted_best_tile": "128x128x128",
+        "correct": false
+      },
+      {
+        "dtype": "int8",
+        "size": 128,
+        "actual_best_tile": "32x32x32",
+        "predicted_best_tile": "128x128x128",
+        "correct": false
+      },
+      {
+        "dtype": "int8",
+        "size": 256,
+        "actual_best_tile": "32x32x32",
+        "predicted_best_tile": "128x128x128",
+        "correct": false
+      },
+      {
+        "dtype": "int8",
+        "size": 512,
+        "actual_best_tile": "64x64x64",
+        "predicted_best_tile": "128x128x128",
+        "correct": false
+      },
+      {
+        "dtype": "int8",
+        "size": 1024,
+        "actual_best_tile": "64x64x64",
+        "predicted_best_tile": "128x128x128",
+        "correct": false
+      },
+      {
+        "dtype": "int8",
+        "size": 2048,
+        "actual_best_tile": "64x64x32",
+        "predicted_best_tile": "128x128x128",
+        "correct": false
+      },
+      {
+        "dtype": "int8",
+        "size": 4096,
+        "actual_best_tile": "64x64x64",
+        "predicted_best_tile": "128x128x128",
+        "correct": false
+      },
+      {
+        "dtype": "int8",
+        "size": 8192,
+        "actual_best_tile": "64x64x64",
+        "predicted_best_tile": "128x128x128",
+        "correct": false
+      }
+    ]
+  }
+}

@@ -1,15 +1,18 @@
-# Half-Precision Floating-Point (FP16) cuTile Optimization Summary
+# FP16 cuTile Optimization Summary
 
 ## Headline
 
-This report removes Parallel Thread Execution (PTX) from the main figures and focuses on whether tuned cuTile FP16 can beat Triton and Torch.
+This report removes PTX from the main figures and focuses on whether tuned cuTile FP16 can beat Triton and Torch.
 
 ## Best cuTile configs by size
 
-- 128: 64x64x64, occupancy=8, 0.93 TFLOP/s, 0.005 ms
-- 256: 32x32x32, occupancy=1, 7.34 TFLOP/s, 0.005 ms
-- 512: 64x64x64, occupancy=2, 29.57 TFLOP/s, 0.009 ms
-- 1024: 128x64x64, occupancy=2, 61.93 TFLOP/s, 0.035 ms
+- 128: 32x32x32, occupancy=2, 0.57 TFLOP/s (0.4% of peak), 0.007 ms
+- 256: 32x32x32, occupancy=1, 4.03 TFLOP/s (2.8% of peak), 0.008 ms
+- 512: 64x64x64, occupancy=2, 19.76 TFLOP/s (13.9% of peak), 0.014 ms
+- 1024: 128x64x64, occupancy=2, 64.99 TFLOP/s (45.8% of peak), 0.033 ms
+- 2048: 128x64x32, occupancy=2, 81.02 TFLOP/s (57.1% of peak), 0.212 ms
+- 4096: 128x128x64, occupancy=2, 88.70 TFLOP/s (62.5% of peak), 1.550 ms
+- 8192: 128x128x64, occupancy=2, 72.95 TFLOP/s (51.4% of peak), 15.071 ms
 
 ## Artifact files
 

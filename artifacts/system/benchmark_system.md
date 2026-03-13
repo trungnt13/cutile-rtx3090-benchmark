@@ -1,6 +1,6 @@
 # Benchmark System Specification
 
-- Timestamp (UTC): `2026-03-13T12:51:52.562057+00:00`
+- Timestamp (UTC): `2026-03-13T21:19:14.223979+00:00`
 - Hostname: `trungnt13`
 - Project root: `/home/trungnt13/codes/cutile`
 - Git commit: `unavailable (workspace is not a git repo)`
@@ -48,7 +48,7 @@ Core(s) per socket:                      8
 Socket(s):                               1
 Stepping:                                2
 Frequency boost:                         enabled
-CPU(s) scaling MHz:                      49%
+CPU(s) scaling MHz:                      52%
 CPU max MHz:                             5363.0771
 CPU min MHz:                             613.8470
 BogoMIPS:                                8399.82

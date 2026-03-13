@@ -5,7 +5,8 @@
     1024,
     1024
   ],
-  "compile_ms": 22.416406020056456,
-  "first_launch_ms": 0.8107979665510356,
-  "steady_latency_ms": 0.7524966430664063
+  "compile_ms": 20.535360963549465,
+  "first_launch_ms": 0.8111980278044939,
+  "steady_latency_ms": 0.7588249564170837,
+  "steady_latency_std_ms": 0.0007921347323128692
 }
