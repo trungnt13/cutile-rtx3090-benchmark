@@ -2,17 +2,17 @@
 
 ## What cuTile Currently Proves
 
-- It can be competitive on FP16 and BF16 when tuned.
+- It can be competitive on half-precision floating-point (FP16) and brain floating point (BF16) when tuned.
 - It exposes tile decisions clearly enough to support engineering analysis.
 - It is promising as a research and compiler exploration tool on Ampere-class hardware.
 
 ## What cuTile Does Not Yet Prove
 
-- Production-ready correctness for int8 GEMM.
+- Production-ready correctness for int8 general matrix multiplication (GEMM).
 - End-to-end superiority over mature library stacks.
 - Memory-footprint advantages; this repo does not instrument allocator behavior in a way that supports that claim.
 
-## Why the PTX Baseline Is Intentionally Limited
+## Why the Parallel Thread Execution (PTX) Baseline Is Intentionally Limited
 
 The PTX-inline kernel in the main report is not trying to be the best possible handwritten CUDA implementation. That would create a moving target and turn the benchmark into an optimization contest instead of a readable comparison.
 
@@ -23,11 +23,11 @@ The current design keeps PTX useful for two purposes:
 
 ## Why Triton Matters Here
 
-Triton is the strongest “manual kernel” comparison in this repo because it gives explicit kernel control without dropping to raw CUDA/PTX source. If cuTile is only competitive against the PTX baseline but not against Triton, that would be weak evidence. The repo therefore keeps Triton in the main figures.
+Triton is the strongest “manual kernel” comparison in this repo because it gives explicit kernel control without dropping to raw Compute Unified Device Architecture (CUDA) or PTX source. If cuTile is only competitive against the PTX baseline but not against Triton, that would be weak evidence. The repo therefore keeps Triton in the main figures.
 
 ## Why Int8 Is Treated Conservatively
 
-The int8 IR investigation shows a semantic mismatch, not just a numerical tolerance issue. The current cuTile path narrows and re-widens partial tiles in a way that matches wrapped accumulation rather than exact int32 accumulation.
+The int8 intermediate representation (IR) investigation shows a semantic mismatch, not just a numerical tolerance issue. The current cuTile path narrows and re-widens partial tiles in a way that matches wrapped accumulation rather than exact int32 accumulation.
 
 That means:
 

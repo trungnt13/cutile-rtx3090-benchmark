@@ -1,8 +1,8 @@
-# FP16 cuTile Optimization Summary
+# Half-Precision Floating-Point (FP16) cuTile Optimization Summary
 
 ## Headline
 
-This report removes PTX from the main figures and focuses on whether tuned cuTile FP16 can beat Triton and Torch.
+This report removes Parallel Thread Execution (PTX) from the main figures and focuses on whether tuned cuTile FP16 can beat Triton and Torch.
 
 ## Best cuTile configs by size
 

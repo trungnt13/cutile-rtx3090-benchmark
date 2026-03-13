@@ -1,13 +1,13 @@
-# Int8 IR Investigation
+# Int8 Intermediate Representation (IR) Investigation
 
 This directory contains the evidence behind the repo's main int8 caveat.
 
 ## Why This Exists
 
-The benchmark results showed that cuTile's int8 output did not match exact int32 GEMM accumulation. Rather than hide that behind a single error number, the repo keeps the supporting evidence here:
+The benchmark results showed that cuTile's int8 output did not match exact int32 general matrix multiplication (GEMM) accumulation. Rather than hide that behind a single error number, the repo keeps the supporting evidence here:
 
 - `summary.json`: measured discrepancy summary
-- `mm_i8.cutileir.txt`: exported cuTile IR
+- `mm_i8.cutileir.txt`: exported cuTile intermediate representation (IR)
 
 ## Key Finding
 

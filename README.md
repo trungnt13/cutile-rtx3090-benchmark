@@ -1,14 +1,14 @@
 # cuTile Benchmark
 
-Public benchmark artifact comparing cuTile, a simple PTX-inline baseline, Triton, and Torch matmul implementations on NVIDIA Ampere.
+Public benchmark artifact comparing cuTile, a simple Parallel Thread Execution (PTX)-inline baseline, Triton, and Torch matmul implementations on NVIDIA Ampere.
 
 This repo is benchmark-first, not library-first. Its goal is to answer a narrow set of questions clearly:
 
-- Can tuned cuTile compete on latency and throughput for practical FP16 and BF16 GEMMs on RTX 3090?
+- Can tuned cuTile compete on latency and throughput for practical half-precision floating-point (FP16) and brain floating point (BF16) general matrix multiplications (GEMMs) on RTX 3090?
 - How much of the gap to Torch and Triton comes from kernel design choices versus compile and launch overhead?
 - Which parts of the current cuTile stack are promising, and which parts still fail correctness or product-readiness standards?
 
-The current published run was collected on an NVIDIA GeForce RTX 3090 with an AMD Ryzen 7 5800X. The artifact bundle includes raw CSV/JSON exports, summary plots, an int8 IR investigation, and a machine-readable system specification.
+The current published run was collected on an NVIDIA GeForce RTX 3090 graphics processing unit (GPU) with an AMD Ryzen 7 5800X central processing unit (CPU). The artifact bundle includes raw comma-separated values (CSV) and JavaScript Object Notation (JSON) exports, summary plots, an int8 intermediate representation (IR) investigation, and a machine-readable system specification.
 
 ## Headline Findings
 
@@ -91,9 +91,9 @@ python -m benchmarks.ptx_iteration_study
 
 ## Benchmark Policy
 
-- Steady-state latency is measured with CUDA events after warmup iterations.
+- Steady-state latency is measured with Compute Unified Device Architecture (CUDA) events after warmup iterations.
 - Compile time and first-launch time are measured separately with host wall time.
-- Floating-point correctness references disable TF32 so the comparison is against a stricter accumulator path.
+- Floating-point correctness references disable TensorFloat-32 (TF32) so the comparison is against a stricter accumulator path.
 - PTX-inline uses a fixed 16x16 tiled baseline in the main comparison. That is deliberate: the PTX path is meant to be understandable, not maximally optimized.
 - Int8 results are reported with both exact-int32 and wrapped-per-tile comparison metrics because the current cuTile path does not preserve exact int32 accumulation semantics.
 
@@ -111,7 +111,7 @@ def benchmark_ms_cupy(fn, warmup: int, iters: int) -> float:
     start.record()
 ```
 
-That helper exists so steady-state timing excludes JIT and lazy initialization costs. Compile and first-launch timings are reported by separate host-side helpers rather than being mixed into the GPU event number.
+That helper exists so steady-state timing excludes just-in-time (JIT) compilation and lazy initialization costs. Compile and first-launch timings are reported by separate host-side helpers rather than being mixed into the GPU event number.
 
 The main CLI stays thin:
 

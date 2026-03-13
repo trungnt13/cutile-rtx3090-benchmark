@@ -2,7 +2,7 @@
 
 ## Thesis-oriented findings
 
-1. cuTile can be a throughput and latency competitive path on Ampere for FP16/BF16 when tile shapes are tuned.
+1. cuTile can be a throughput- and latency-competitive path on Ampere for half-precision floating-point (FP16) and brain floating point (BF16) when tile shapes are tuned.
 2. cuTile still has correctness and semantics issues, most clearly on the int8 path.
 3. TileIR/cuTile is promising, but the current stack needs careful validation before claiming production correctness.
 4. This artifact set does not yet prove a memory-footprint advantage; that needs a separate workspace/allocator instrumentation pass.
@@ -18,7 +18,7 @@ For real-time AI/ML, the low-size regime (128/256) is the most important latency
 - Fastest observed int8 latency: 0.005 ms on cuTile at size 128.
 
 Cold-start timing is also reported separately via `compile_ms` and `first_launch_ms`.
-For PTX, steady-state latency excludes module compile time; compile and first-launch costs are exported separately.
+For Parallel Thread Execution (PTX), steady-state latency excludes module compile time; compile and first-launch costs are exported separately.
 
 ## PTX timing validation
 
@@ -26,11 +26,11 @@ For PTX, steady-state latency excludes module compile time; compile and first-la
 - Compile time: `24.476 ms`
 - First launch time: `0.076 ms`
 - Steady-state latency: `0.013 ms`
-- Nsight Systems trace was captured with NVTX ranges `ptx_compile`, `ptx_first_launch`, and `ptx_steady_state` to verify the phase separation.
+- Nsight Systems trace was captured with NVIDIA Tools Extension (NVTX) ranges `ptx_compile`, `ptx_first_launch`, and `ptx_steady_state` to verify the phase separation.
 
-## Int8 IR finding
+## Int8 intermediate representation (IR) finding
 
-The exported int8 repro under `investigations/int8_ir/` shows that cuTile does not preserve exact int32 GEMM semantics for `i8 @ i8`.
+The exported int8 repro under `investigations/int8_ir/` shows that cuTile does not preserve exact int32 general matrix multiplication (GEMM) semantics for `i8 @ i8`.
 - `max_err_exact`: 768
 - `max_err_tile_wrapped_i8`: 0
 

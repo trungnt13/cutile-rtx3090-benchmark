@@ -2,7 +2,7 @@
 
 cuTile is more interesting than a toy, but not yet clean enough to call production-ready. That is the real result of this benchmark.
 
-On an RTX 3090, cuTile can be latency- and throughput-competitive with Triton and Torch on FP16 and BF16 once the tile shape is tuned to the problem. That makes it worth taking seriously as a compiler and kernel-generation path on Ampere. But the same artifact set also shows exactly why benchmark screenshots are not enough: cold-start cost is real, the PTX baseline still explains a large part of the performance gap, and the current int8 path fails exact GEMM semantics.
+On an RTX 3090, cuTile can be latency- and throughput-competitive with Triton and Torch on half-precision floating-point (FP16) and brain floating point (BF16) once the tile shape is tuned to the problem. That makes it worth taking seriously as a compiler and kernel-generation path on Ampere. But the same artifact set also shows exactly why benchmark screenshots are not enough: cold-start cost is real, the Parallel Thread Execution (PTX) baseline still explains a large part of the performance gap, and the current int8 path fails exact general matrix multiplication (GEMM) semantics.
 
 This repo is therefore not a victory lap. It is a measured engineering story:
 
@@ -155,10 +155,10 @@ Those boundaries matter. Without them, this would read like a benchmark advertis
 
 ### System
 
-- GPU: NVIDIA GeForce RTX 3090, 24 GB, compute capability `8.6`
-- CPU: AMD Ryzen 7 5800X, `16` logical CPUs
+- GPU: NVIDIA GeForce RTX 3090, 24 gigabytes (GB), compute capability `8.6`
+- CPU: AMD Ryzen 7 5800X, `16` logical central processing unit (CPU) threads
 - Driver: `580.126.20`
-- NVIDIA reported CUDA version: `13.0`
+- NVIDIA reported Compute Unified Device Architecture (CUDA) version: `13.0`
 - Torch CUDA version: `12.8`
 - Python: `3.13.12`
 
@@ -186,8 +186,8 @@ Authoritative system artifact:
 
 - steady-state timing uses CUDA events after warmup
 - compile and first-launch timing use host wall time with explicit synchronization
-- float references disable TF32 to keep the comparison stricter
-- int8 is checked against both exact int32 accumulation and the wrapped-per-tile model observed in the exported IR
+- float references disable TensorFloat-32 (TF32) to keep the comparison stricter
+- int8 is checked against both exact int32 accumulation and the wrapped-per-tile model observed in the exported intermediate representation (IR)
 
 ### Raw Data and Supporting Artifacts
 

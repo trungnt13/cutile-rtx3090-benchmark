@@ -2,10 +2,10 @@
 
 ## Scope
 
-This repo benchmarks square GEMMs on a single RTX 3090-focused setup across four paths:
+This repo benchmarks square general matrix multiplications (GEMMs) on a single RTX 3090-focused setup across four paths:
 
 - cuTile
-- PTX-inline baseline
+- Parallel Thread Execution (PTX)-inline baseline
 - Triton
 - Torch
 
@@ -21,13 +21,13 @@ The benchmark separates three phases:
 
 That split is deliberate. Mixing all three into one number would hide whether a backend is slow because of runtime work or because of one-time compilation and initialization overhead.
 
-The steady-state helpers in `benchmarks/core.py` warm up before recording CUDA events. Compile and first-launch timings use host wall time with explicit synchronization on both Torch and CuPy stream views.
+The steady-state helpers in `benchmarks/core.py` warm up before recording Compute Unified Device Architecture (CUDA) events. Compile and first-launch timings use host wall time with explicit synchronization on both Torch and CuPy stream views.
 
 ## Correctness Policy
 
 ### Floating-Point
 
-Floating-point references are computed with TF32 disabled:
+Floating-point references are computed with TensorFloat-32 (TF32) disabled:
 
 ```python
 prev = torch.backends.cuda.matmul.allow_tf32
@@ -45,7 +45,7 @@ That policy matters because Ampere defaults can make a fast path look more accur
 The int8 path is checked against two references:
 
 - Exact `torch._int_mm` int32 accumulation
-- A wrapped-per-tile reference that models the behavior seen in the exported cuTile IR
+- A wrapped-per-tile reference that models the behavior seen in the exported cuTile intermediate representation (IR)
 
 This is why the reports carry both `max_err_exact` and `max_err_tile_wrapped_i8`.
 

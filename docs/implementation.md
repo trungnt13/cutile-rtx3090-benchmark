@@ -27,11 +27,11 @@ The grid policy is tied directly to tile dimensions so the benchmark can study h
 
 ### PTX-inline
 
-The PTX path is intentionally simple. In the full benchmark it is a fixed 16x16 scalar tiled kernel that serves as a readable baseline. A separate PTX iteration study expands that into:
+The Parallel Thread Execution (PTX) path is intentionally simple. In the full benchmark it is a fixed 16x16 scalar tiled kernel that serves as a readable baseline. A separate PTX iteration study expands that into:
 
 - scalar 16x16
 - scalar 32x32
-- WMMA 32x32 tensor-core path
+- Warp Matrix Multiply Accumulate (WMMA) 32x32 tensor-core path
 
 That split lets the repo keep the main report readable while still documenting how PTX design choices affect results.
 
@@ -45,7 +45,7 @@ Triton serves as the hand-written kernel baseline with a small tile search. The 
 
 `benchmark_ms_cupy`, `benchmark_ms_torch`, and `measure_host_ms` exist because timing policy is load-bearing in this repo. They separate:
 
-- GPU event time for steady-state work
+- graphics processing unit (GPU) event time for steady-state work
 - host-visible time for compilation
 - host-visible time for first launch
 
@@ -53,8 +53,8 @@ Triton serves as the hand-written kernel baseline with a small tile search. The 
 
 `make_reference` and `make_chunk_wrapped_i8_reference` exist because correctness is not a single-number question for the current int8 path. The benchmark must distinguish:
 
-- exact GEMM semantics
-- the wrapped behavior actually produced by the current cuTile IR
+- exact general matrix multiplication (GEMM) semantics
+- the wrapped behavior actually produced by the current cuTile intermediate representation (IR)
 
 ### Shared comparison helper
 
